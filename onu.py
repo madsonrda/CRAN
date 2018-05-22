@@ -41,12 +41,13 @@ class ONU(object):
                 except Exception as e:
                     pass
 
-                    sent_pkt = self.env.process(self.SendUpDataToOLT()) # send pkts during grant time
+                    sent_pkt = self.env.process(self.SendUpDataToOLT(wavelength)) # send pkts during grant time
                     yield sent_pkt # wait grant be used
 
-    def SendUpDataToOLT():
+    def SendUpDataToOLT(wavelength):
         pkt = yield self.buffer.get()
         self.buffer_size -= pkt.size
         bits = pkt.size * 8
         sending_time = 	bits/float(self.bandwidth)
         yield self.env.timeout(sending_time)
+        self.odn.UpStream(self.oid,pkt,wavelength)
