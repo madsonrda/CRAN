@@ -4,45 +4,49 @@ import random
 
 
 class ONU(object):
-    def __init__(self,oid,env,lambdas,odn):
+    def __init__(self,oid,env,wavelengths,odn):
+        self.oid = oid
+        self.bandwidth = 10000000000 #10Gbs
         self.env = env
+        self.wavelengths = wavelengths
+        self.active_GateReceivers = {}
         self.odn= odn
         self.ULInput = simpy.Store(self.env) #Simpy RRH->ONU Uplink input port
         self.buffer = simpy.Store(self.env) #Simpy ONU pkt buffer
         self.buffer_size = 0
-        self.ReceiverFromRRH = self.env.process(self.ONU_ReceiverFromRRH(odn))
+        self.ReceiverULDataFromRRH = self.env.process(self.ONU_ReceiverULDataFromRRH())
+
+        for w in wavelengths:
+            self.active_GateReceivers[w] = self.env.process(self.ONU_ReceiverGateFromOLT(w))
 
 
-    def ONU_ReceiverFromRRH(self):
+
+    def ONU_ReceiverULDataFromRRH(self):
         while True:
             # Grant stage
             pkt = (yield self.ULInput.get() )
             self.buffer_size =  self.buffer_size + pkt.size
             self.buffer.put(pkt)
 
+    def ONU_ReceiverGateFromOLT(self,wavelength):
+        while True:
+            gate = ( yield self.odn.Get_Gate(self.oid, wavelength) )
 
+            for grant in gate['grant']:
+                try:
+                    #print("{} : grant time in onu {} = {}".format(self.env.now,self.oid,grant['grant_final_time'] - self.env.now))
+                    next_grant = grant['start'] - self.env.now #time until next grant begining
+                    #print("next_grant timeout {}".format(next_grant))
+                    yield self.env.timeout(next_grant)  #wait for the next grant
+                except Exception as e:
+                    pass
 
+                    sent_pkt = self.env.process(self.SendUpDataToOLT()) # send pkts during grant time
+                    yield sent_pkt # wait grant be used
 
-        #
-        # self.grant_report_store = simpy.Store(self.env) #Simpy Stores grant usage report
-        # self.request_container = simpy.Container(env, init=2, capacity=2)
-        # self.grant_report = []
-        # self.distance = distance #fiber distance
-        # self.oid = oid #ONU indentifier
-        # self.delay = self.distance/float(200000) # fiber propagation delay
-        # self.excess = 0 #difference between the size of the request and the grant
-        # self.newArrived = 0
-        # self.last_req_buffer = 0
-        # self.request_counter = 0
-        # self.pg = packet_gen(self.env, "bbmp", self, **pg_param) #creates the packet generator
-        # if qlimit == 0:# checks if the queue has a size limit
-        #     queue_limit = None
-        # else:
-        #     queue_limit = qlimit
-        # self.port = ONUPort(self.env, self, qlimit=queue_limit)#create ONU PORT
-        # self.pg.out = self.port #forward packet generator output to ONU port
-        # if not (DBA_ALGORITHM == "mdba" or DBA_ALGORITHM == "mpd_dba"):
-        #     self.sender = self.env.process(self.ONU_sender(odn))
-        # self.receiver = self.env.process(self.ONU_receiver(odn))
-        # self.bucket = bucket #Bucket size
-        # self.lamb = lamb # wavelength lambda
+    def SendUpDataToOLT():
+        pkt = yield self.buffer.get()
+        self.buffer_size -= pkt.size
+        bits = pkt.size * 8
+        sending_time = 	bits/float(self.bandwidth)
+        yield self.env.timeout(sending_time)
