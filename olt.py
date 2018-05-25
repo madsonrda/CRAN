@@ -46,4 +46,4 @@ class OLT(object):
             alloc_signal = yield self.AllocInput.get() #get a request message
             #print("Received Request from ONU {} at {}".format(request['ONU'].oid, self.env.now))
             # send request to DBA
-            self.env.process(self.dba.dba(alloc_signal))
+            self.env.process(self.dba.dba(alloc_signal,self.grant_store))
