@@ -13,10 +13,10 @@ class DBA(object):
 
 
 class Nakayama_DWBA(DBA):
-    def __init(self,env,grant_store,wavelengths,ONUs):
+    def __init__(self,env,grant_store,wavelengths,ONUs):
         DBA.__init__(self,env,grant_store)
         self.ONUs = ONUs
-        self.delay_limit = 0.000250
+        self.delay_limit = 0.001250
         self.wavelengths = wavelengths
         self.bandwidth = 10000000000
         self.active_wavelenghts = []
@@ -34,23 +34,27 @@ class Nakayama_DWBA(DBA):
         #alloc_signal{ONU,pkt,burst}
         while True:
             yield self.AllocGathering
+            #print self.env.now
             self.alloc_list = sorted(self.alloc_list, key=lambda x: x['onu'].distance, reverse=True)
 
             self.granting_start = self.env.now + (self.alloc_list[0]['onu'].distance/self.lightspeed)
             self.time_limit = self.env.now + self.delay_limit
 
-            max_alloc = max(self.alloc_list, key=lambda x : x['busrt'])
+            max_alloc = max(self.alloc_list, key=lambda x : x['burst'])
             bits = (max_alloc['pkt'].size * max_alloc['burst']) * 8
             slot_time = bits/float(self.bandwidth)
+            #print("slot_time={}".format(slot_time))
 
             self.num_slots = math.floor((self.time_limit - self.granting_start)/float(slot_time))
             if self.num_slots < 1:
                 print "NUM SLOTS leq 1"
+            #print("num_slots={}".format(self.num_slots))
             w = 0
             self.active_wavelenghts.append(self.wavelengths[w])
             slot = 1
             start = self.granting_start
             Gate = []
+            #print("tam_alloclist={}".format(len(self.alloc_list)))
             for alloc in self.alloc_list:
                 end = start + slot_time
                 grant = {'start': start, 'end': end, 'wavelength': self.wavelengths[w]}
@@ -66,11 +70,14 @@ class Nakayama_DWBA(DBA):
                         slot = 1
                         start = self.granting_start
                     except Exception as e:
-                        print e
-                         sys.exit(0)
+                        print w
+                        print("ERROR {}".format(e))
+                        print self.env.now
+                        sys.exit(0)
 
             for gate in Gate:
                 self.grant_store.put(gate)
+            self.alloc_list = []
 
 
 

@@ -26,31 +26,29 @@ class PacketGenerator(object):
         self.cpri_option = cpri_option # Fixed packet size
         self.finish = finish # packe end time
         self.packets_sent = 0 # packet counter
-		self.eth_overhead = 0.0
-		self.pkt_size = 768000 #CPRI 1 pkt size
-		self.number_of_burst_pkts = 1
-		self.interval = interval #intervalo entres os Ack (Rever com bruno a definição)
-		self.CpriConfig()# set CPRI configurations
+        self.eth_overhead = 0.0
+        self.pkt_size = 768000 #CPRI 1 pkt size
+        self.number_of_burst_pkts = 1
+        self.interval = interval #intervalo entres os Ack
+        self.CpriConfig()# set CPRI configurations
         self.action = env.process(self.run())  # starts the run() method as a SimPy process
 
-
-
-    def CpriConfig():
-		if self.cpri_option == 1:
+    def CpriConfig(self):
+        if self.cpri_option == 1:
             self.eth_overhead = 0.00001562
-			self.number_of_burst_pkts = 1
+            self.number_of_burst_pkts = 1
         elif self.cpri_option == 2:
             self.eth_overhead = 0.00003004
-			self.number_of_burst_pkts = 2
+            self.number_of_burst_pkts = 2
         elif self.cpri_option == 3:
-			self.eth_overhead = 0.00005887
-			self.number_of_burst_pkts = 4
-		elif self.cpri_option == 4:
-			self.eth_overhead = 0.00007329
-			self.number_of_burst_pkts = 5
+            self.eth_overhead = 0.00005887
+            self.number_of_burst_pkts = 4
+        elif self.cpri_option == 4:
+            self.eth_overhead = 0.00007329
+            self.number_of_burst_pkts = 5
         else: #
             self.eth_overhead = 0
-			self.number_of_burst_pkts = 1
+            self.number_of_burst_pkts = 1
 
     def run(self):
         """The generator function used in simulations.

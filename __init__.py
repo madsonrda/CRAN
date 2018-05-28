@@ -35,9 +35,9 @@ pkt_gen = []
 for i in range(3):
     pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store))
 #criar OLT
-dba = "Nakayama_DWBA"
+dba = {'name':"Nakayama_DWBA"}
 olt = OLT(env,0,odn,ONUs,wavelengths,dba)
-odn.set_ONUs(ONUS)
+odn.set_ONUs(ONUs)
 odn.set_OLTs([olt])
 def bbu_sched(olt,bbu_store):
     while True:

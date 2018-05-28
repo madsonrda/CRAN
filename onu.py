@@ -46,11 +46,11 @@ class ONU(object):
                 sent_pkt = self.env.process(self.SendUpDataToOLT(grant['wavelength'])) # send pkts during grant time
                 yield sent_pkt # wait grant be used
 
-    def SendUpDataToOLT(wavelength):
+    def SendUpDataToOLT(self,wavelength):
         pkt = yield self.buffer.get()
         self.buffer_size -= pkt.size
         bits = pkt.size * 8
         sending_time = 	bits/float(self.bandwidth)
         yield self.env.timeout(sending_time)
         msg = (self.oid,pkt,wavelength)
-        self.odn.upstream(msg)
+        self.odn.upstream.put(msg)

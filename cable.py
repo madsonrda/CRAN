@@ -13,6 +13,8 @@ class ODN(object):
         self.lightspeed = float(200000)
         self.upstream = simpy.Store(self.env)
         self.downstream = simpy.Store(self.env)
+        self.up_proc = self.env.process(self.UpStream())
+        self.down_proc = self.env.process(self.DownStream())
 
     def set_ONUs(self,ONUs):
         self.ONUs = ONUs
