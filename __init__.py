@@ -33,7 +33,7 @@ for i in range(3):
 
 pkt_gen = []
 for i in range(3):
-    pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store))
+    pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,3))
 #criar OLT
 dba = {'name':"Nakayama_DWBA"}
 olt = OLT(env,0,odn,ONUs,wavelengths,dba)
@@ -45,4 +45,4 @@ def bbu_sched(olt,bbu_store):
         olt.AllocInput.put(alloc_signal)
 bbu = env.process(bbu_sched(olt,bbu_store))
 #start simulation
-env.run(until=5)
+env.run(until=2)

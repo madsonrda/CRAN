@@ -34,17 +34,22 @@ class ONU(object):
     def ONU_ReceiverFromOLT(self):
         while True:
             msg = ( yield self.DLInput.get() )
+
             for grant in msg['grant']:
                 try:
                     #print("{} : grant time in onu {} = {}".format(self.env.now,self.oid,grant['grant_final_time'] - self.env.now))
                     next_grant = grant['start'] - self.env.now #time until next grant begining
+                    #print next_grant
                     #print("next_grant timeout {}".format(next_grant))
                     yield self.env.timeout(next_grant)  #wait for the next grant
                 except Exception as e:
+                    print "tempo negativo"
                     pass
-
-                sent_pkt = self.env.process(self.SendUpDataToOLT(grant['wavelength'])) # send pkts during grant time
-                yield sent_pkt # wait grant be used
+                #print("{}-{}".format(self.oid,self.env.now))
+                while self.env.now <= grant['end']:
+                    if self.buffer > 0:
+                        sent_pkt = self.env.process(self.SendUpDataToOLT(grant['wavelength'])) # send pkts during grant time
+                        yield sent_pkt # wait grant be used
 
     def SendUpDataToOLT(self,wavelength):
         pkt = yield self.buffer.get()

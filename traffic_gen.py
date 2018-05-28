@@ -27,7 +27,8 @@ class PacketGenerator(object):
         self.finish = finish # packe end time
         self.packets_sent = 0 # packet counter
         self.eth_overhead = 0.0
-        self.pkt_size = 768000 #CPRI 1 pkt size
+        self.pkt_size = 306000  #CPRI 1 pkt size
+        #self.pkt_size = 9422
         self.number_of_burst_pkts = 1
         self.interval = interval #intervalo entres os Ack
         self.CpriConfig()# set CPRI configurations
