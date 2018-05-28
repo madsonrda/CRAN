@@ -16,7 +16,7 @@ class ONU(object):
         self.buffer = simpy.Store(self.env) #Simpy ONU pkt buffer
         self.buffer_size = 0
         self.ReceiverULDataFromRRH = self.env.process(self.ONU_ReceiverULDataFromRRH())
-        self.ReceiverFromOLT = self.env.process(self.ONU_ReceiverFromOLT()
+        self.ReceiverFromOLT = self.env.process(self.ONU_ReceiverFromOLT())
         self.DLInput = simpy.Store(self.env) #Simpy OLT->ONU Downlink input port
 
         # for w in wavelengths:

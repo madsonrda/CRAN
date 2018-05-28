@@ -18,9 +18,10 @@ class Packet(object):
 
 class PacketGenerator(object):
     """This class represents the packet generation process """
-    def __init__(self, env, id, ONU, cpri_option=1,interval=0.004, finish=float("inf")):
+    def __init__(self, env, id, ONU, bbu_store ,cpri_option=1,interval=0.004, finish=float("inf")):
         self.id = id # packet id
         self.ONU = ONU
+        self.bbu_store = bbu_store
         self.env = env # Simpy Environment
         self.cpri_option = cpri_option # Fixed packet size
         self.finish = finish # packe end time
@@ -66,6 +67,10 @@ class PacketGenerator(object):
                 p_list.append(p)
 			#Cpri over Ethernet overhead timeout
             self.env.timeout(self.eth_overhead)
+            #alloc_signal{ONU,pkt,burst}
+            alloc_signal = {'onu':self.ONU,'burst':self.number_of_burst_pkts,'pkt':p_list[0]}
+            self.bbu_store.put(alloc_signal)
             #send pkt to ONU
+
             for p in p_list:
                 self.ONU.ULInput.put(p) # put the packet in ONU port

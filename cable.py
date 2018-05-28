@@ -5,14 +5,20 @@ import random
 class ODN(object):
     """This class represents optical distribution Network."""
     #{'lambda':{active: int,OLT_id: int, ONU_dict: {oid,distance}, }}
-    def __init__(self, env, OLTs, ONUs):
+    def __init__(self, env):
         self.env = env
         self.wavelengths = {}
-        self.OLTs = OLTs
-        self.ONUs = ONUs
+        self.OLTs = None
+        self.ONUs = None
         self.lightspeed = float(200000)
         self.upstream = simpy.Store(self.env)
         self.downstream = simpy.Store(self.env)
+
+    def set_ONUs(self,ONUs):
+        self.ONUs = ONUs
+
+    def set_OLTs(self,OLTs):
+        self.OLTs = OLTs
 
     def create_wavelength(self,wavelength):
         self.wavelengths[wavelength] = {"active": 0, "OLT": -1}
@@ -31,10 +37,10 @@ class ODN(object):
             onu,pkt,wavelength = yield self.upstream.get()
             self.env.process( self.propagation_delay(onu) )
             olt = self.wavelengths[wavelength]["OLT"]
-            self.OLTs.ULInput.put(pkt)
+            self.OLTs[olt].ULInput.put(pkt)
 
-    def DownStream(self, onu, msg, wavelength):
+    def DownStream(self):
         while True:
-            onu, msg, wavelength = yield self.downstream.get()
-            self.env.process( self.propagation_delay(onu) )
-            self.ONUs[onu].DLInput.put(msg)
+            msg = yield self.downstream.get()
+            self.env.process( self.propagation_delay(msg['onu']) )
+            self.ONUs[msg['onu']].DLInput.put(msg)
