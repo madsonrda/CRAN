@@ -33,7 +33,9 @@ class ONU(object):
 
     def ONU_ReceiverFromOLT(self):
         while True:
+            print(" {} - waiting grant at {}".format(self.oid,self.env.now))
             msg = ( yield self.DLInput.get() )
+            print(" {} -grant arrived at {}".format(self.oid,self.env.now))
 
             for grant in msg['grant']:
                 try:
@@ -43,19 +45,27 @@ class ONU(object):
                     #print("next_grant timeout {}".format(next_grant))
                     yield self.env.timeout(next_grant)  #wait for the next grant
                 except Exception as e:
-                    print "tempo negativo"
+                    print self.env.now
+                    print( "{} - tempo negativo".format(self.oid))
+                    print grant['start']
+                    print("next_grant timeout {}".format(next_grant))
                     pass
                 #print("{}-{}".format(self.oid,self.env.now))
+                print("{} - grant end {}".format(self.oid,grant['end']))
                 while self.env.now <= grant['end']:
-                    if self.buffer > 0:
-                        sent_pkt = self.env.process(self.SendUpDataToOLT(grant['wavelength'])) # send pkts during grant time
-                        yield sent_pkt # wait grant be used
+                    sent_pkt = self.env.process(self.SendUpDataToOLT(grant['wavelength'])) # send pkts during grant time
+                    yield sent_pkt # wait grant be used
+                    if self.buffer_size <= 0:
+                        break
+                print("{} - time left {} ".format(self.oid,(grant['end'] - self.env.now)))
 
     def SendUpDataToOLT(self,wavelength):
         pkt = yield self.buffer.get()
         self.buffer_size -= pkt.size
+
         bits = pkt.size * 8
         sending_time = 	bits/float(self.bandwidth)
         yield self.env.timeout(sending_time)
         msg = (self.oid,pkt,wavelength)
-        self.odn.upstream.put(msg)
+        print("{} - buffer {} at {}".format(self.oid,self.buffer_size,self.env.now))
+        self.odn.wavelengths[wavelength]['upstream'].put(msg)

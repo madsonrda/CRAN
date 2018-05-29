@@ -35,10 +35,10 @@ class OLT(object):
         """A process which sends a grant message to ONU"""
         while True:
             msg = yield self.grant_store.get() # receive grant from dba
-            #print self.env.now
+            print("{} - grant enviado - {}".format(msg['onu'],self.env.now))
             #print msg
             self.odn.activate_wavelenght(msg['wavelength'],self.olt_number)
-            self.odn.downstream.put(msg) # send grant to odn
+            self.odn.wavelengths[msg['wavelength']]['downstream'].put(msg) # send grant to odn
 
     def OLT_ULDataReceiver(self):
         while True:

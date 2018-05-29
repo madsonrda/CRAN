@@ -38,9 +38,9 @@ class Nakayama_DWBA(DBA):
             self.alloc_list = sorted(self.alloc_list, key=lambda x: x['onu'].distance, reverse=True)
 
             self.granting_start = self.env.now + (self.alloc_list[0]['onu'].distance/self.lightspeed)
-            #print self.env.now
-            #print "XXXXX"
-            #print self.granting_start
+            print self.env.now
+            print "------------------------------------------"
+            print self.granting_start
             self.time_limit = self.env.now + self.delay_limit
             #print self.time_limit
 
@@ -60,7 +60,7 @@ class Nakayama_DWBA(DBA):
             Gate = []
             #print("tam_alloclist={}".format(len(self.alloc_list)))
             for alloc in self.alloc_list:
-                end = start + slot_time
+                end = start + slot_time + self.guard_interval
                 grant = {'start': start, 'end': end, 'wavelength': self.wavelengths[w]}
                 gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[w], 'grant': [grant]}
                 Gate.append(gate)
@@ -125,9 +125,9 @@ class M_DWBA(DBA):
             self.alloc_list = sorted(self.alloc_list, key=lambda x: x['onu'].distance, reverse=True)
 
             self.granting_start = self.env.now + (self.alloc_list[0]['onu'].distance/self.lightspeed)
-            #print self.env.now
-            #print "XXXXX"
-            #print self.granting_start
+            print self.env.now
+            print "-----------------------------------"
+            print self.granting_start
             self.time_limit = self.env.now + self.delay_limit
             #print self.time_limit
 
