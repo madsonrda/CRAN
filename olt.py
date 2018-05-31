@@ -44,6 +44,7 @@ class OLT(object):
         while True:
             msg = yield self.ULInput.get()
             print "XXXXXXXXXXXXXXXXX"
+            print self.env.now
             print (self.env.now - msg.time) < 0.001250
             print (self.env.now - msg.time)
 

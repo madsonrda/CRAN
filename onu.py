@@ -50,6 +50,7 @@ class ONU(object):
                     print grant['start']
                     print("next_grant timeout {}".format(next_grant))
                     pass
+                print(" {} -grant start at {}".format(self.oid,self.env.now))
                 #print("{}-{}".format(self.oid,self.env.now))
                 print("{} - grant end {}".format(self.oid,grant['end']))
                 while self.env.now <= grant['end']:

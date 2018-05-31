@@ -42,7 +42,7 @@ class Nakayama_DWBA(DBA):
             print "------------------------------------------"
             print self.granting_start
             self.time_limit = self.env.now + self.delay_limit
-            #print self.time_limit
+            print("time_limit = {}".format(self.time_limit))
 
             max_alloc = max(self.alloc_list, key=lambda x : x['burst'])
             bits = (max_alloc['pkt'].size * max_alloc['burst']) * 8

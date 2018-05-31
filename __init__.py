@@ -27,13 +27,13 @@ for w in wavelengths:
 #criar ONU
 ONUs = []
 for i in range(3):
-    ONUs.append(ONU(i,env,wavelengths,20,odn))
+    ONUs.append(ONU(i,env,wavelengths,100,odn))
 
 #criar PacketGenerator
 
 pkt_gen = []
 for i in range(3):
-    pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,3))
+    pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,1))
 #criar OLT
 dba = {'name':"Nakayama_DWBA"}
 olt = OLT(env,0,odn,ONUs,wavelengths,dba)
