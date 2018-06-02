@@ -25,7 +25,7 @@ class BBU(object):
 		print "PKT sendo processado"
 		if pkt.split != self.split:
 			pkt.split = self.split
-			bw_split = (calc.splits_info[pkt.coding][pkt.cpri_option][pkt.split]['bw'])/100
+			bw_split = (calc.splits_info[pkt.coding][pkt.cpri_option][pkt.split]['bw'])/250
 			pkt.size = bw_split
 
 			# later add energy cost

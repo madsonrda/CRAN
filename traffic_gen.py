@@ -2,15 +2,23 @@ import time
 import simpy
 import random
 
+import ltecpricalcs as calc
+
 class Packet(object):
     """ This class represents a network packet """
-
-    def __init__(self, time, size, id, src="a", dst="z"):
+    def __init__(self, time, id, cpri_option,split=1,coding=28,src="a", dst="z"):
         self.time = time# creation time
-        self.size = size # packet size
         self.id = id # packet id
         self.src = src #packet source address
         self.dst = dst #packet destination address
+
+        #BRUNO
+        self.split = split
+        self.cpri_option = cpri_option # Fixed packet size
+        self.coding = coding #same as MCS
+        self.size = (calc.splits_info[self.coding][self.cpri_option][1]['bw'])/250
+        self.prb = calc.CPRI[self.cpri_option]['PRB']
+        #BRUNO
 
     def __repr__(self):
         return "id: {}, src: {}, time: {}, size: {}".\
@@ -62,7 +70,7 @@ class PacketGenerator(object):
             p_list = []
             for i in range(self.number_of_burst_pkts):
                 self.packets_sent += 1
-                p = Packet(self.env.now, self.pkt_size, self.packets_sent, src=self.id)
+                p = Packet(self.env.now, self.packets_sent, self.cpri_option, src=self.id)
                 p_list.append(p)
 			#Cpri over Ethernet overhead timeout
             self.env.timeout(self.eth_overhead)
