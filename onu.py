@@ -4,7 +4,7 @@ import random
 
 
 class ONU(object):
-    def __init__(self,oid,env,wavelengths,distance,odn):
+    def __init__(self,oid,env,wavelengths,distance,odn,fog_odn):
         self.oid = oid
         self.bandwidth = 10000000000 #10Gbs
         self.env = env
@@ -12,6 +12,7 @@ class ONU(object):
         #self.wavelengths = wavelengths
         #self.active_GateReceivers = {}
         self.odn= odn
+        self.fog_odn = fog_odn
         self.ULInput = simpy.Store(self.env) #Simpy RRH->ONU Uplink input port
         self.buffer = simpy.Store(self.env) #Simpy ONU pkt buffer
         self.buffer_size = 0
@@ -70,3 +71,4 @@ class ONU(object):
         msg = (self.oid,pkt,wavelength)
         print("{} - buffer {} at {}".format(self.oid,self.buffer_size,self.env.now))
         self.odn.wavelengths[wavelength]['upstream'].put(msg)
+        self.fog_odn.wavelengths[wavelength]['upstream'].put(msg)
