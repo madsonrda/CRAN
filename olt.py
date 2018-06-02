@@ -5,12 +5,15 @@ from dba import DBA, Nakayama_DWBA
 
 class OLT(object):
     """Optical line terminal"""
-    def __init__(self,env,olt_number,odn,ONUs,wavelengths,dba):
+    def __init__(self,env,olt_number,odn,ONUs,wavelengths,dba,output=None,output_wavelength=None):
         self.env = env
         self.olt_number = olt_number
         self.wavelengths = wavelengths
         self.ONUs = ONUs
+        self.distance = 0
         self.odn = odn
+        self.output = output
+        self.output_wavelength = output_wavelength
         self.grant_store = simpy.Store(self.env) # grant communication between processes
         self.ULInput = simpy.Store(self.env)
         self.AllocInput = simpy.Store(self.env)
@@ -47,6 +50,8 @@ class OLT(object):
             print self.env.now
             print (self.env.now - msg.time) < 0.001250
             print (self.env.now - msg.time)
+            msg = (self.olt_number,msg,self.output_wavelength)
+            self.output.wavelengths[self.output_wavelength]['upstream'].put(msg)
 
 
     def OLT_AllocationReceiver(self):

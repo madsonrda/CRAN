@@ -6,6 +6,7 @@ from cable import ODN
 from olt import OLT
 from dba import DBA, Nakayama_DWBA
 from onu import ONU
+from bbupool import BBUPool
 from traffic_gen import PacketGenerator, Packet
 
 
@@ -34,9 +35,21 @@ for i in range(3):
 pkt_gen = []
 for i in range(3):
     pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,1))
+
+#criar dc local
+dc_local = BBUPool(env,0,200)
+for i in range(3):
+    dc_local.add_bbu(i)
+
+#criar link entre a OLT e o BBU POOL
+link_dc_local = ODN(env)
+link_dc_local.create_wavelength(150)#wavelength = 150
+link_dc_local.activate_wavelenght(150,0)#wavelength e bbupoll_id
+link_dc_local.set_OLTs([dc_local])
+
 #criar OLT
 dba = {'name':"Nakayama_DWBA"}
-olt = OLT(env,0,odn,ONUs,wavelengths,dba)
+olt = OLT(env,0,odn,ONUs,wavelengths,dba,link_dc_local,150)
 odn.set_ONUs(ONUs)
 odn.set_OLTs([olt])
 def bbu_sched(olt,bbu_store):
@@ -44,5 +57,6 @@ def bbu_sched(olt,bbu_store):
         alloc_signal = yield bbu_store.get()
         olt.AllocInput.put(alloc_signal)
 bbu = env.process(bbu_sched(olt,bbu_store))
+link_dc_local.set_ONUs([olt])
 #start simulation
 env.run(until=2)
