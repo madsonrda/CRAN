@@ -35,4 +35,5 @@ class BBU(object):
 			self.env.timeout(self.proc_timeout)
 		else:
 			print "SPLITS iguais, segue o jogo"
+			yield self.env.timeout(0)
 		self.postProc_buffer.put(pkt)
