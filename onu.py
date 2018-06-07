@@ -4,8 +4,9 @@ import random
 
 
 class ONU(object):
-    def __init__(self,oid,env,wavelengths,distance,odn,fog_odn=None,fog_distance=3):
+    def __init__(self,oid,env,monitoring,wavelengths,distance,odn,fog_odn=None,fog_distance=3):
         self.oid = oid
+        self.monitoring = monitoring
         self.bandwidth = 10000000000 #10Gbs
         self.env = env
         self.distance = distance
@@ -13,6 +14,7 @@ class ONU(object):
         #self.wavelengths = wavelengths
         #self.active_GateReceivers = {}
         self.odn= odn
+        self.grant_usage = 0
         self.fog_odn = fog_odn
         self.ULInput = simpy.Store(self.env) #Simpy RRH->ONU Uplink input port
         self.buffer = simpy.Store(self.env) #Simpy ONU pkt buffer
@@ -61,6 +63,10 @@ class ONU(object):
                     if self.buffer_size <= 0:
                         break
                 print("{} - time left {} ".format(self.oid,(grant['end'] - self.env.now)))
+                print("{:.10f}".format(grant['end'] - grant['start']))
+                print self.grant_usage
+                self.monitoring.grant_usage(grant['start'],grant['end'],self.grant_usage)
+                self.grant_usage = 0
 
     def SendUpDataToOLT(self,wavelength):
         pkt = yield self.buffer.get()
@@ -68,6 +74,7 @@ class ONU(object):
 
         bits = pkt.size * 8
         sending_time = 	bits/float(self.bandwidth)
+        self.grant_usage += sending_time
         yield self.env.timeout(sending_time)
         msg = (self.oid,pkt,wavelength)
         print("{} - buffer {} at {}".format(self.oid,self.buffer_size,self.env.now))

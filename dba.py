@@ -17,7 +17,7 @@ class Nakayama_DWBA(DBA):
     def __init__(self,env,monitoring,grant_store,wavelengths,ONUs):
         DBA.__init__(self,env,monitoring,grant_store)
         self.ONUs = ONUs
-        self.delay_limit = 0.001250
+        self.delay_limit = 0.000250
         self.wavelengths = wavelengths
         self.bandwidth = 10000000000
         self.active_wavelenghts = []
@@ -48,7 +48,7 @@ class Nakayama_DWBA(DBA):
             max_alloc = max(self.alloc_list, key=lambda x : x['burst'])
             bits = (max_alloc['pkt'].size * max_alloc['burst']) * 8
             slot_time = bits/float(self.bandwidth)
-            print("slot_time={}".format(slot_time))
+            print("slot_time={:.10f}".format(slot_time))
 
             self.num_slots = math.floor((self.time_limit - self.granting_start)/float(slot_time))
             if self.num_slots < 1:
@@ -79,7 +79,7 @@ class Nakayama_DWBA(DBA):
                         print("ERROR {}".format(e))
                         print self.env.now
                         sys.exit(0)
-            
+
             self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelenghts))
             for gate in Gate:
                 self.grant_store.put(gate)
