@@ -28,7 +28,7 @@ class OLT(object):
     def set_dba(self,dba):
         #choosing algorithms
         if dba['name'] == "Nakayama_DWBA":
-            self.dba = Nakayama_DWBA(self.env,self.grant_store, self.wavelengths, self.ONUs)
+            self.dba = Nakayama_DWBA(self.env,self.monitoring,self.grant_store, self.wavelengths, self.ONUs)
         else:
             pass
             #self.dba = IPACT(self.env, max_grant_size, self.grant_store)

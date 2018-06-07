@@ -6,15 +6,16 @@ import sys
 
 class DBA(object):
     """DBA Parent class, heritated by every kind of DBA"""
-    def __init__(self,env,grant_store):
+    def __init__(self,env,monitoring,grant_store):
         self.env = env
         self.grant_store = grant_store
         self.guard_interval = 0.000001
+        self.monitoring = monitoring
 
 
 class Nakayama_DWBA(DBA):
-    def __init__(self,env,grant_store,wavelengths,ONUs):
-        DBA.__init__(self,env,grant_store)
+    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs):
+        DBA.__init__(self,env,monitoring,grant_store)
         self.ONUs = ONUs
         self.delay_limit = 0.001250
         self.wavelengths = wavelengths
@@ -78,7 +79,8 @@ class Nakayama_DWBA(DBA):
                         print("ERROR {}".format(e))
                         print self.env.now
                         sys.exit(0)
-            print len(self.active_wavelenghts)
+            
+            self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelenghts))
             for gate in Gate:
                 self.grant_store.put(gate)
             self.alloc_list = []
