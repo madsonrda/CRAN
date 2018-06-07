@@ -8,6 +8,7 @@ from dba import DBA, Nakayama_DWBA
 from onu import ONU
 from bbupool import BBUPool
 from traffic_gen import PacketGenerator, Packet
+from monitor import monitor
 
 
 
@@ -15,6 +16,8 @@ from traffic_gen import PacketGenerator, Packet
 #criar env
 random.seed(50)
 env = simpy.Environment()
+#criar monitor
+monitoring = monitor(env,"teste")
 bbu_store = simpy.Store(env)
 #criar ODN
 odn = ODN(env)
@@ -28,7 +31,7 @@ for w in wavelengths:
 #criar ONU
 ONUs = []
 for i in range(3):
-    ONUs.append(ONU(i,env,wavelengths,100,odn))
+    ONUs.append(ONU(i,env,wavelengths,20,odn))
 
 #criar PacketGenerator
 
@@ -49,7 +52,7 @@ link_dc_local.set_OLTs([dc_local])
 
 #criar OLT
 dba = {'name':"Nakayama_DWBA"}
-olt = OLT(env,0,odn,ONUs,wavelengths,dba,link_dc_local,150)
+olt = OLT(env,monitoring,0,odn,ONUs,wavelengths,dba,link_dc_local,150)
 odn.set_ONUs(ONUs)
 odn.set_OLTs([olt])
 def bbu_sched(olt,bbu_store):
@@ -58,5 +61,6 @@ def bbu_sched(olt,bbu_store):
         olt.AllocInput.put(alloc_signal)
 bbu = env.process(bbu_sched(olt,bbu_store))
 link_dc_local.set_ONUs([olt])
+
 #start simulation
 env.run(until=2)
