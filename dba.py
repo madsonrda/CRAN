@@ -102,10 +102,10 @@ class Nakayama_DWBA(DBA):
                 self.AllocGathering = self.env.event()
 
 class M_DWBA(DBA):
-    def __init__(self,env,grant_store,wavelengths,ONUs):
-        DBA.__init__(self,env,grant_store)
+    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs):
+        DBA.__init__(self,env,monitoring,grant_store)
         self.ONUs = ONUs
-        self.delay_limit = 0.001250
+        self.delay_limit = 0.000250
         self.wavelengths = wavelengths
         self.bandwidth = 10000000000
         self.active_wavelenghts = []
@@ -128,15 +128,15 @@ class M_DWBA(DBA):
 
             self.granting_start = self.env.now + (self.alloc_list[0]['onu'].distance/self.lightspeed)
             print self.env.now
-            print "-----------------------------------"
+            print "------------------------------------------"
             print self.granting_start
             self.time_limit = self.env.now + self.delay_limit
-            #print self.time_limit
+            print("time_limit = {}".format(self.time_limit))
 
-            max_alloc = max(self.alloc_list, key=lambda x : x['burst'])
-            bits = (max_alloc['pkt'].size * max_alloc['burst']) * 8
+            #max_alloc = max(self.alloc_list, key=lambda x : x['burst'])
+            bits = self.alloc_list[0]['pkt'].size  * 8
             slot_time = bits/float(self.bandwidth)
-            print("slot_time={}".format(slot_time))
+            print("slot_time={:.10f}".format(slot_time))
 
             self.num_slots = math.floor((self.time_limit - self.granting_start)/float(slot_time))
             if self.num_slots < 1:
@@ -149,25 +149,27 @@ class M_DWBA(DBA):
             Gate = []
             #print("tam_alloclist={}".format(len(self.alloc_list)))
             for alloc in self.alloc_list:
-                end = start + slot_time
-                grant = {'start': start, 'end': end, 'wavelength': self.wavelengths[w]}
-                gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[w], 'grant': [grant]}
+                gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[w], 'grant': []}
+                for burst in range(alloc['burst']):
+                    end = start + slot_time + self.guard_interval
+                    grant = {'start': start, 'end': end, 'wavelength': self.wavelengths[w]}
+                    gate['grant'].append(grant)
+                    slot +=1
+                    start = end
+                    if slot > self.num_slots:
+                        w +=1
+                        try:
+                            self.active_wavelenghts.append(self.wavelengths[w])
+                            slot = 1
+                            start = self.granting_start
+                        except Exception as e:
+                            print w
+                            print("ERROR {}".format(e))
+                            print self.env.now
+                            sys.exit(0)
                 Gate.append(gate)
 
-                slot +=1
-                start = end
-                if slot > self.num_slots:
-                    w +=1
-                    try:
-                        self.active_wavelenghts.append(self.wavelengths[w])
-                        slot = 1
-                        start = self.granting_start
-                    except Exception as e:
-                        print w
-                        print("ERROR {}".format(e))
-                        print self.env.now
-                        sys.exit(0)
-            print len(self.active_wavelenghts)
+            self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelenghts))
             for gate in Gate:
                 self.grant_store.put(gate)
             self.alloc_list = []
