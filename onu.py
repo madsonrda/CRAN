@@ -37,36 +37,48 @@ class ONU(object):
 
     def ONU_ReceiverFromOLT(self):
         while True:
-            print(" {} - waiting grant at {}".format(self.oid,self.env.now))
+            print(" {} - waiting gate at {}".format(self.oid,self.env.now))
             msg = ( yield self.DLInput.get() )
-            print(" {} -grant arrived at {}".format(self.oid,self.env.now))
-
+            print(" {} -gate arrived at {}".format(self.oid,self.env.now))
+            grant_dict = {}
             for grant in msg['grant']:
-                try:
-                    #print("{} : grant time in onu {} = {}".format(self.env.now,self.oid,grant['grant_final_time'] - self.env.now))
-                    next_grant = grant['start'] - self.env.now #time until next grant begining
-                    #print next_grant
-                    #print("next_grant timeout {}".format(next_grant))
-                    yield self.env.timeout(next_grant)  #wait for the next grant
-                except Exception as e:
-                    print self.env.now
-                    print( "{} - tempo negativo".format(self.oid))
-                    print grant['start']
-                    print("next_grant timeout {}".format(next_grant))
-                    pass
-                print(" {} -grant start at {}".format(self.oid,self.env.now))
-                #print("{}-{}".format(self.oid,self.env.now))
-                print("{} - grant end {}".format(self.oid,grant['end']))
-                while self.env.now <= grant['end']:
-                    sent_pkt = self.env.process(self.SendUpDataToOLT(grant['wavelength'])) # send pkts during grant time
-                    yield sent_pkt # wait grant be used
-                    if self.buffer_size <= 0:
-                        break
-                print("{} - time left {} ".format(self.oid,(grant['end'] - self.env.now)))
-                print("{:.10f}".format(grant['end'] - grant['start']))
-                print self.grant_usage
-                self.monitoring.grant_usage(grant['start'],grant['end'],self.grant_usage)
-                self.grant_usage = 0
+
+                if grant['wavelength'] in grant_dict.keys():
+
+                    grant_dict[grant['wavelength']].append(grant)
+                else:
+                    grant_dict[grant['wavelength']]= [grant]
+
+            for w in grant_dict:
+                self.env.process(self.grant_processing(grant_dict[w]))
+
+    def grant_processing(self,grant_list):
+        for grant in grant_list:
+            try:
+                #print("{} : grant time in onu {} = {}".format(self.env.now,self.oid,grant['grant_final_time'] - self.env.now))
+                next_grant = grant['start'] - self.env.now #time until next grant begining
+                #print next_grant
+                #print("next_grant timeout {}".format(next_grant))
+                yield self.env.timeout(next_grant)  #wait for the next grant
+            except Exception as e:
+                print self.env.now
+                print( "{} - tempo negativo".format(self.oid))
+                print grant['start']
+                print("next_grant timeout {}".format(next_grant))
+                pass
+            print(" {} -grant start at {}".format(self.oid,self.env.now))
+            #print("{}-{}".format(self.oid,self.env.now))
+            print("{} - grant end {}".format(self.oid,grant['end']))
+            while self.env.now <= grant['end']:
+                sent_pkt = self.env.process(self.SendUpDataToOLT(grant['wavelength'])) # send pkts during grant time
+                yield sent_pkt # wait grant be used
+                if self.buffer_size <= 0:
+                    break
+            print("{} - time left {} ".format(self.oid,(grant['end'] - self.env.now)))
+            print("{:.10f}".format(grant['end'] - grant['start']))
+            print self.grant_usage
+            self.monitoring.grant_usage(grant['start'],grant['end'],self.grant_usage)
+            self.grant_usage = 0
 
     def SendUpDataToOLT(self,wavelength):
         pkt = yield self.buffer.get()
