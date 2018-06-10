@@ -14,10 +14,11 @@ class DBA(object):
 
 
 class Nakayama_DWBA(DBA):
+    #problema: ultrapassa limite de delay se o tamanho do slot ou delay prop for grande
     def __init__(self,env,monitoring,grant_store,wavelengths,ONUs):
         DBA.__init__(self,env,monitoring,grant_store)
         self.ONUs = ONUs
-        self.delay_limit = 0.000250
+        self.delay_limit = 0.001250
         self.wavelengths = wavelengths
         self.bandwidth = 10000000000
         self.active_wavelenghts = []
@@ -61,7 +62,7 @@ class Nakayama_DWBA(DBA):
             Gate = []
             #print("tam_alloclist={}".format(len(self.alloc_list)))
             for alloc in self.alloc_list:
-                end = start + slot_time + self.guard_interval
+                end = start + slot_time
                 grant = {'start': start, 'end': end, 'wavelength': self.wavelengths[w]}
                 gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[w], 'grant': [grant]}
                 Gate.append(gate)
@@ -105,7 +106,7 @@ class M_DWBA(DBA):
     def __init__(self,env,monitoring,grant_store,wavelengths,ONUs):
         DBA.__init__(self,env,monitoring,grant_store)
         self.ONUs = ONUs
-        self.delay_limit = 0.000250
+        self.delay_limit = 0.001250
         self.wavelengths = wavelengths
         self.bandwidth = 10000000000
         self.active_wavelenghts = []
@@ -151,7 +152,7 @@ class M_DWBA(DBA):
             for alloc in self.alloc_list:
                 gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[w], 'grant': []}
                 for burst in range(alloc['burst']):
-                    end = start + slot_time + self.guard_interval
+                    end = start + slot_time
                     grant = {'start': start, 'end': end, 'wavelength': self.wavelengths[w]}
                     gate['grant'].append(grant)
                     slot +=1

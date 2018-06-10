@@ -1,7 +1,7 @@
 import time
 import simpy
 import random
-from dba import DBA, Nakayama_DWBA
+from dba import DBA, Nakayama_DWBA, M_DWBA
 
 class OLT(object):
     """Optical line terminal"""
@@ -29,6 +29,8 @@ class OLT(object):
         #choosing algorithms
         if dba['name'] == "Nakayama_DWBA":
             self.dba = Nakayama_DWBA(self.env,self.monitoring,self.grant_store, self.wavelengths, self.ONUs)
+        elif dba['name'] == "M_DWBA" :
+            self.dba = M_DWBA(self.env,self.monitoring,self.grant_store, self.wavelengths, self.ONUs)
         else:
             pass
             #self.dba = IPACT(self.env, max_grant_size, self.grant_store)

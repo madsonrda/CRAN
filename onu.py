@@ -53,6 +53,7 @@ class ONU(object):
                 self.env.process(self.grant_processing(grant_dict[w]))
 
     def grant_processing(self,grant_list):
+        print("{}-{}".format(self.oid,grant_list))
         for grant in grant_list:
             try:
                 #print("{} : grant time in onu {} = {}".format(self.env.now,self.oid,grant['grant_final_time'] - self.env.now))
@@ -69,7 +70,7 @@ class ONU(object):
             print(" {} -grant start at {}".format(self.oid,self.env.now))
             #print("{}-{}".format(self.oid,self.env.now))
             print("{} - grant end {}".format(self.oid,grant['end']))
-            while self.env.now <= grant['end']:
+            while self.env.now < grant['end']:
                 sent_pkt = self.env.process(self.SendUpDataToOLT(grant['wavelength'])) # send pkts during grant time
                 yield sent_pkt # wait grant be used
                 if self.buffer_size <= 0:

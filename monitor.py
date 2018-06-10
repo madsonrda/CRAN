@@ -15,9 +15,13 @@ class monitor(object):
         self.grant_idle_file.write("idle,slot,usage,timestamp\n")
 
     def get_delay(self,pkt_time):
-        return self.env.now - pkt_time
+        return (self.env.now - pkt_time)
     def fronthaul_delay(self,pkt_time):
+        print self.env.now
         delay = self.get_delay(pkt_time)
+        print delay < 0.001250
+        print 'delay'
+        print delay
         self.fronthaul_delay_file.write("{},{}\n".format(delay,self.env.now))
     def fronthaul_active_wavelengths(self,wavelengths):
         self.fronthaul_dwba_wavelengths.write("{},{}\n".format(wavelengths,self.env.now))
