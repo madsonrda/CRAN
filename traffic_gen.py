@@ -6,19 +6,21 @@ import ltecpricalcs as calc
 
 class Packet(object):
     """ This class represents a network packet """
-    def __init__(self, time, size,id, cpri_option,split=1,coding=28,src="a", dst="z"):
+    def __init__(self, time, size,id, cpri_option,split=1,coding=28,src="a", dst="z", interval=0.004):
         self.time = time# creation time
         self.id = id # packet id
         self.src = src #packet source address
         self.dst = dst #packet destination address
         self.size = size
+        self.interval = interval
 
         #BRUNO
         self.split = split
         self.cpri_option = cpri_option # Fixed packet size
-        self.coding = coding #same as MCS
-        #self.size = (calc.splits_info[self.coding][self.cpri_option][1]['bw'])/250
-        self.prb = calc.CPRI[self.cpri_option]['PRB']
+        self.coding = coding #same as MCS        
+        pkt_size=(calc.splits_info[self.coding][self.cpri_option][1]['bw'])
+        self.size = calc.size_byte(pkt_size,self.interval)
+        #self.prb = calc.CPRI[self.cpri_option]['PRB']
         #BRUNO
 
     def __repr__(self):
