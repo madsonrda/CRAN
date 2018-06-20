@@ -5,9 +5,10 @@ import random
 class ODN(object):
     """This class represents optical distribution Network."""
     #{'lambda':{active: int,OLT_id: int, ONU_dict: {oid,distance}, }}
-    def __init__(self, env):
+    def __init__(self, env,monitoring):
         self.env = env
         self.wavelengths = {}
+        self.monitoring = monitoring
         self.OLTs = None
         self.ONUs = None
         self.lightspeed = float(200000)
@@ -53,9 +54,11 @@ class ODN(object):
     def UpStream(self,wavelength):
         while True:
             onu,pkt,wavelength = yield self.wavelengths[wavelength]['upstream'].get()
-            #print "up"
+
             print("{} - up at {}".format(onu,self.env.now))
-            self.env.process( self.splitter_up(onu,wavelength,pkt) )
+
+            self.monitoring.set_UL_bw(pkt.src,wavelength,pkt.size,self.env.now)
+            self.env.process( self.splitter_up(onu,wavelength,pkt))
 
     def DownStream(self,wavelength):
         while True:

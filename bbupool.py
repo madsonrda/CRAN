@@ -23,17 +23,13 @@ class BBUPool(object):
 
 	def Pre_Proc(self):
 		while True:
-			#pkt = yield self.pre_proc_buffer.get()
 			pkt = yield self.ULInput.get()
-			print "CHEGOU PKT NO BBU BUFFER"
-			print pkt
 
 			BBU_id = pkt.src # src id is the same for all DC BBUs of a cell
-
 			self.BBU_DICT[BBU_id].proc_buffer.put(pkt) #write to BBU proc buffer
 
 	def Post_Proc(self):
 		while True:
 			pkt = yield self.post_proc_buffer.get()
 			#if odn != none:
-			print "BBUPOOL: Send to ODN"
+			#print "BBUPOOL: Send to ODN"
