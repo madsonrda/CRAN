@@ -1,6 +1,8 @@
 import simpy
 import ltecpricalcs as calc
 
+interval = 0.004
+
 class BBU(object):
 	def __init__(self,env,bbu_id,post_proc_buffer=None,split=1):
 		self.bbu_id = bbu_id
@@ -13,7 +15,6 @@ class BBU(object):
 
 		self.postProc_buffer = post_proc_buffer # post proc buffer da BBU POOL
 
-
 	# todo: function to change self.split
 
 	def Check_ProcBuffer(self):
@@ -22,11 +23,12 @@ class BBU(object):
 			yield self.env.process(self.Proc(pkt))
 
 	def Proc(self,pkt):
-		print "PKT sendo processado"
+		#print "PKT sendo processado"
 		if pkt.split != self.split:
 			pkt.split = self.split
-			bw_split = (calc.splits_info[pkt.coding][pkt.cpri_option][pkt.split]['bw'])/250
-			pkt.size = bw_split
+			
+			table_size = calc.splits_info[pkt.coding][pkt.cpri_option][pkt.split]['bw']
+			pkt.size = calc.size_byte(table_size,pkt.interval)
 
 			# later add energy cost
 			# later add processed pkt to log file
@@ -34,6 +36,6 @@ class BBU(object):
 			# fix proc timeout
 			self.env.timeout(self.proc_timeout)
 		else:
-			print "SPLITS iguais, segue o jogo"
+			#print "SPLITS iguais, segue o jogo"
 			yield self.env.timeout(0)
 		self.postProc_buffer.put(pkt)

@@ -210,3 +210,13 @@ for coding in range(0,29):
 #import json
 #data_as_dict = json.loads(json.dumps(splits_info, indent=4))
 #print(data_as_dict)
+
+
+def size_byte(pkt_size,interval):
+	"""
+	1. Change Mbits to MBytes (divide by 8)
+	2. From Mbytes to bytes (multiply by 1million)
+	3. Multiply by interval of pkt generation in seconds (ex. 4ms == 0.004)
+	"""
+	final_size = ((pkt_size / 8) * 1000 * 1000) * interval
+	return final_size
