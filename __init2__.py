@@ -1,0 +1,147 @@
+import time
+import simpy
+import random
+import sys
+from cable import ODN
+from olt import OLT
+from dba import DBA, Nakayama_DWBA
+from onu import ONU
+from bbupool import BBUPool
+from traffic_gen import PacketGenerator, Packet
+from monitor import monitor
+
+#pega sinalizacao pro grant do mdba 
+def bbu_sched(olt,bbu_store):
+    while True:
+        alloc_signal = yield bbu_store.get()
+        olt.AllocInput.put(alloc_signal)
+
+#criar env
+random.seed(50)
+env = simpy.Environment()
+
+#criar monitor
+monitoring = monitor(env,"teste")
+bbu_store = simpy.Store(env)
+
+#criar dc central
+dc_central = BBUPool(env,0,250)
+
+#######
+#DC LOCAL 1
+
+for i in range(30):
+    dc_central.add_bbu(i)
+
+#criar dc local 1
+dc_local1 = BBUPool(env,1,200)
+#dc_local1_cells = 30
+for i in range(30):
+    dc_local1.add_bbu(i)
+
+#criar link entre a DC-LOCAL e o DC-CENTRAL
+link_midhaul1 = ODN(env,monitoring,"midhaul1")
+link_midhaul1.create_wavelength(200,0)#wavelength = 200
+link_midhaul1.activate_wavelenght(200,0)#wavelength e bbupoll_id
+link_midhaul1.set_Bside_nodes({0:dc_central})
+link_midhaul1.set_Aside_nodes({1:dc_local1})
+
+bbu_store1 = simpy.Store(env)
+
+#criar ODN
+fronthaul1 = ODN(env,monitoring,"fronthaul1")
+#criar wavelengths
+wavelengths1 = []
+for i in range(100):
+    wavelengths1.append(i)
+
+for w in wavelengths1:
+    fronthaul1.create_wavelength(w,0)
+#criar ONUs
+ONUs1 = {}
+for i in range(30):
+    ONUs1[i]=ONU(i,env,monitoring,wavelengths1,20,fronthaul1)
+
+#criar PacketGenerator
+pkt_gen1 = []
+for i in range(30):
+    pkt_gen1.append(PacketGenerator(env,i,ONUs1[i],bbu_store1,random.randint(1,3)))
+
+#criar link entre a OLT e o BBU POOL
+link_dc_local1 = ODN(env,monitoring,"link_dc_local1")
+link_dc_local1.create_wavelength(150,1)#wavelength = 150
+link_dc_local1.activate_wavelenght(150,1)#wavelength e bbupoll_id
+link_dc_local1.set_Bside_nodes({1:dc_local1})
+
+#criar OLT
+#dba = {'name':"Nakayama_DWBA"}
+dba1 = {'name':"M_DWBA"}
+olt1 = OLT(env,monitoring,0,fronthaul1,ONUs1,wavelengths1,dba1,link_dc_local1,150)
+fronthaul1.set_Aside_nodes(ONUs1)
+fronthaul1.set_Bside_nodes({0:olt1})
+
+link_dc_local1.set_Aside_nodes({0:olt1})
+
+bbu1 = env.process(bbu_sched(olt1,bbu_store1))
+
+################################
+#DC LOCAL 2
+
+for i in range(30,60):
+    dc_central.add_bbu(i)
+
+#criar dc local 1
+dc_local2 = BBUPool(env,2,200)
+#dc_local1_cells = 30
+for i in range(30,60):
+    dc_local2.add_bbu(i)
+
+#criar link entre a DC-LOCAL e o DC-CENTRAL
+link_midhaul2 = ODN(env,monitoring,"link_midhaul2")
+link_midhaul2.create_wavelength(200,0)#wavelength = 200
+link_midhaul2.activate_wavelenght(200,0)#wavelength e bbupoll_id
+link_midhaul2.set_Bside_nodes({0:dc_central})
+link_midhaul2.set_Aside_nodes({2:dc_local2})
+
+bbu_store2 = simpy.Store(env)
+
+#criar ODN
+fronthaul2 = ODN(env,monitoring,"fronthaul2")
+#criar wavelengths
+wavelengths2 = []
+for i in range(300,400):
+    wavelengths2.append(i)
+
+for w in wavelengths2:
+    fronthaul2.create_wavelength(w,1)
+#criar ONUs
+ONUs2 = {}
+for i in range(30,60):
+    ONUs2[i] = ONU(i,env,monitoring,wavelengths2,20,fronthaul2)
+
+#criar PacketGenerator
+pkt_gen2 = []
+for i in range(30,60):
+	pkt_gen2.append(PacketGenerator(env,i,ONUs2[i],bbu_store2,random.randint(1,3)))
+
+#criar link entre a OLT e o BBU POOL
+link_dc_local2 = ODN(env,monitoring,"link_dc_local2")
+link_dc_local2.create_wavelength(151,2)#wavelength = 150
+link_dc_local2.activate_wavelenght(151,2)#wavelength e bbupoll_id
+link_dc_local2.set_Bside_nodes({2:dc_local2})
+
+#criar OLT
+#dba = {'name':"Nakayama_DWBA"}
+dba2 = {'name':"M_DWBA"}
+olt2 = OLT(env,monitoring,1,fronthaul2,ONUs2,wavelengths2,dba2,link_dc_local2,151)
+fronthaul2.set_Aside_nodes(ONUs2)
+fronthaul2.set_Bside_nodes({1:olt2})
+
+link_dc_local2.set_Aside_nodes({1:olt2})
+
+bbu2 = env.process(bbu_sched(olt2,bbu_store2))
+
+###############################
+
+#start simulation
+env.run(until=2)
