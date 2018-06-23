@@ -64,7 +64,7 @@ class Nakayama_DWBA(DBA):
             for alloc in self.alloc_list:
                 end = start + slot_time
                 grant = {'start': start, 'end': end, 'wavelength': self.wavelengths[w]}
-                gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[w], 'grant': [grant]}
+                gate = {'name': 'gate', 'id': alloc['onu'].oid, 'wavelength': self.wavelengths[w], 'grant': [grant]}
                 Gate.append(gate)
 
                 slot +=1
@@ -150,7 +150,7 @@ class M_DWBA(DBA):
             Gate = []
             #print("tam_alloclist={}".format(len(self.alloc_list)))
             for alloc in self.alloc_list:
-                gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[w], 'grant': []}
+                gate = {'name': 'gate', 'id': alloc['onu'].oid, 'wavelength': self.wavelengths[w], 'grant': []}
                 for burst in range(alloc['burst']):
                     end = start + slot_time
                     grant = {'start': start, 'end': end, 'wavelength': self.wavelengths[w]}
