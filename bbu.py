@@ -4,18 +4,19 @@ import ltecpricalcs as calc
 interval = 0.004
 
 class BBU(object):
-	def __init__(self,env,bbu_id,post_proc_buffer=None,split=1):
+	def __init__(self,env,bbu_id,bbupoll_id,post_proc_buffer=None,split=7):
 		self.bbu_id = bbu_id
+		self.bbupoll_id = bbupoll_id
 		self.env = env
 		self.split = split
-		self.proc_timeout = 1/1000 # 1ms
-
+		self.proc_timeout = 1/1000.0 # 1ms
 		self.proc_buffer = simpy.Store(self.env)
 		self.check_procbuffer = self.env.process(self.Check_ProcBuffer())
 
 		self.postProc_buffer = post_proc_buffer # post proc buffer da BBU POOL
 
-	# todo: function to change self.split
+	def set_split(self,split):
+		self.split = split
 
 	def Check_ProcBuffer(self):
 		while True:
@@ -24,6 +25,8 @@ class BBU(object):
 
 	def Proc(self,pkt):
 		#print "PKT sendo processado"
+		if self.bbupoll_id == 0:
+			print "Pacote chegou no DC CENTRAL!!"
 		if pkt.split != self.split:
 			pkt.split = self.split
 			

@@ -25,7 +25,8 @@ monitoring = monitor(env,"teste")
 bbu_store = simpy.Store(env)
 
 #criar dc central
-dc_central = BBUPool(env,0,250)
+dc_central_id = 0
+dc_central = BBUPool(env,dc_central_id,250)
 
 #######
 #DC LOCAL 1
@@ -33,16 +34,21 @@ dc_central = BBUPool(env,0,250)
 for i in range(30):
     dc_central.add_bbu(i)
 
+wavelength1 = 200
+
+#criar link entre a DC-LOCAL e o DC-CENTRAL
+link_midhaul1 = ODN(env,monitoring,"midhaul1")
+link_midhaul1.create_wavelength(wavelength1,dc_central_id)#wavelength = 200
+link_midhaul1.activate_wavelenght(wavelength1,dc_central_id)#wavelength e bbupoll_id
+
 #criar dc local 1
-dc_local1 = BBUPool(env,1,200)
+split1=3
+distance1 = 10
+dc_local1 = BBUPool(env,1,wavelength1,split1,link_midhaul1,distance1)
 #dc_local1_cells = 30
 for i in range(30):
     dc_local1.add_bbu(i)
 
-#criar link entre a DC-LOCAL e o DC-CENTRAL
-link_midhaul1 = ODN(env,monitoring,"midhaul1")
-link_midhaul1.create_wavelength(200,0)#wavelength = 200
-link_midhaul1.activate_wavelenght(200,0)#wavelength e bbupoll_id
 link_midhaul1.set_Bside_nodes({0:dc_central})
 link_midhaul1.set_Aside_nodes({1:dc_local1})
 
@@ -90,16 +96,21 @@ bbu1 = env.process(bbu_sched(olt1,bbu_store1))
 for i in range(30,60):
     dc_central.add_bbu(i)
 
+split2=1
+wavelength2=201
+#criar link entre a DC-LOCAL e o DC-CENTRAL
+link_midhaul2 = ODN(env,monitoring,"link_midhaul2")
+link_midhaul2.create_wavelength(wavelength2,dc_central_id)
+link_midhaul2.activate_wavelenght(wavelength2,dc_central_id)#wavelength e bbupoll_id
+
+distance2 = 10
+
 #criar dc local 1
-dc_local2 = BBUPool(env,2,200)
+dc_local2 = BBUPool(env,2,wavelength2,split2,link_midhaul2,distance2)
 #dc_local1_cells = 30
 for i in range(30,60):
     dc_local2.add_bbu(i)
 
-#criar link entre a DC-LOCAL e o DC-CENTRAL
-link_midhaul2 = ODN(env,monitoring,"link_midhaul2")
-link_midhaul2.create_wavelength(200,0)#wavelength = 200
-link_midhaul2.activate_wavelenght(200,0)#wavelength e bbupoll_id
 link_midhaul2.set_Bside_nodes({0:dc_central})
 link_midhaul2.set_Aside_nodes({2:dc_local2})
 
