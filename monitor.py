@@ -25,8 +25,14 @@ class monitor(object):
         self.fronthaul_delay_file.write("{},{}\n".format(delay,self.env.now))
     def fronthaul_active_wavelengths(self,wavelengths):
         self.fronthaul_dwba_wavelengths.write("{},{}\n".format(wavelengths,self.env.now))
-    def grant_usage(self,start,end,usage):
+    def grant_usage(self,start,end,consumption):
         slot = end - start
-        idle = slot - usage
-        usage = (usage * 100)/float(slot)
+        idle = slot - consumption
+        usage = (consumption * 100)/float(slot)
+        if usage == 0 or usage > 100:
+            print "usage"
+            print usage
+            print slot
+            print consumption
+            print "XXXXX"
         self.grant_idle_file.write("{},{},{},{}\n".format(idle,slot,usage,self.env.now))
