@@ -18,7 +18,7 @@ class Nakayama_DWBA(DBA):
     def __init__(self,env,monitoring,grant_store,wavelengths,ONUs):
         DBA.__init__(self,env,monitoring,grant_store)
         self.ONUs = ONUs
-        self.delay_limit = 0.001250
+        self.delay_limit = 0.000250
         self.wavelengths = wavelengths
         self.bandwidth = 10000000000
         self.active_wavelenghts = []
@@ -40,21 +40,21 @@ class Nakayama_DWBA(DBA):
             self.alloc_list = sorted(self.alloc_list, key=lambda x: x['onu'].distance, reverse=True)
 
             self.granting_start = self.env.now + (self.alloc_list[0]['onu'].distance/self.lightspeed)
-            print self.env.now
-            print "------------------------------------------"
-            print self.granting_start
+            #print self.env.now
+            #print "------------------------------------------"
+            #print self.granting_start
             self.time_limit = self.env.now + self.delay_limit
-            print("time_limit = {}".format(self.time_limit))
+            #print("time_limit = {}".format(self.time_limit))
 
             max_alloc = max(self.alloc_list, key=lambda x : x['burst'])
             bits = (max_alloc['pkt'].size * max_alloc['burst']) * 8
             slot_time = bits/float(self.bandwidth)
-            print("slot_time={:.10f}".format(slot_time))
+            #print("slot_time={:.10f}".format(slot_time))
 
-            self.num_slots = math.floor((self.time_limit - self.granting_start)/float(slot_time))
+            self.num_slots = math.floor((self.time_limit - self.granting_start - 0.0001)/float(slot_time))
             if self.num_slots < 1:
                 print "NUM SLOTS leq 1"
-            print("num_slots={}".format(self.num_slots))
+            #print("num_slots={}".format(self.num_slots))
             w = 0
             self.active_wavelenghts.append(self.wavelengths[w])
             slot = 1
@@ -106,7 +106,7 @@ class M_DWBA(DBA):
     def __init__(self,env,monitoring,grant_store,wavelengths,ONUs):
         DBA.__init__(self,env,monitoring,grant_store)
         self.ONUs = ONUs
-        self.delay_limit = 0.001250
+        self.delay_limit = 0.000250
         self.wavelengths = wavelengths
         self.bandwidth = 10000000000
         self.active_wavelenghts = []
@@ -128,18 +128,18 @@ class M_DWBA(DBA):
             self.alloc_list = sorted(self.alloc_list, key=lambda x: x['onu'].distance, reverse=True)
 
             self.granting_start = self.env.now + (self.alloc_list[0]['onu'].distance/self.lightspeed)
-            print self.env.now
-            print "------------------------------------------"
-            print self.granting_start
+            #print self.env.now
+            #print "------------------------------------------"
+            #print self.granting_start
             self.time_limit = self.env.now + self.delay_limit
-            print("time_limit = {}".format(self.time_limit))
+            #print("time_limit = {}".format(self.time_limit))
 
             #max_alloc = max(self.alloc_list, key=lambda x : x['burst'])
             bits = self.alloc_list[0]['pkt'].size  * 8
             slot_time = bits/float(self.bandwidth)
             print("slot_time={:.10f}".format(slot_time))
 
-            self.num_slots = math.floor((self.time_limit - self.granting_start)/float(slot_time))
+            self.num_slots = math.floor((self.time_limit - self.granting_start - 0.0001)/float(slot_time))
             if self.num_slots < 1:
                 print "NUM SLOTS leq 1"
             print("num_slots={}".format(self.num_slots))
@@ -148,7 +148,7 @@ class M_DWBA(DBA):
             slot = 1
             start = self.granting_start
             Gate = []
-            #print("tam_alloclist={}".format(len(self.alloc_list)))
+            ##print("tam_alloclist={}".format(len(self.alloc_list)))
             for alloc in self.alloc_list:
                 gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[w], 'grant': []}
                 for burst in range(alloc['burst']):
@@ -165,7 +165,7 @@ class M_DWBA(DBA):
                             start = self.granting_start
                         except Exception as e:
                             print w
-                            print("ERROR {}".format(e))
+                            print("ERROR grant {}".format(e))
                             print self.env.now
                             sys.exit(0)
                 Gate.append(gate)
