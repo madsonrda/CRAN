@@ -14,35 +14,35 @@ from monitor import monitor
 
 
 #criar env
-random.seed(10)
+random.seed(50)
 env = simpy.Environment()
 #criar monitor
-monitoring = monitor(env,"tExpM")
+monitoring = monitor(env,"Nakayama_DWBA")
 bbu_store = simpy.Store(env)
 #criar ODN
 odn = ODN(env)
 #criar wavelengths
 wavelengths = []
-for i in range(400):
+for i in range(1000):
     wavelengths.append(i)
 
 for w in wavelengths:
     odn.create_wavelength(w)
 #criar ONU
 ONUs = []
-for i in range(3):
+for i in range(60):
     ONUs.append(ONU(i,env,monitoring,wavelengths,20,odn))
 
 #criar PacketGenerator
 
 pkt_gen = []
-for i in range(3):
-    #pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,random.randint(1,3)))
-    pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,2))
+for i in range(60):
+    pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,random.randint(1,2)))
+    #pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,2))
 
 #criar dc local
 dc_local = BBUPool(env,0,2000)
-for i in range(3):
+for i in range(60):
     dc_local.add_bbu(i)
 
 #criar link entre a OLT e o BBU POOL
@@ -52,8 +52,8 @@ link_dc_local.activate_wavelenght(1500,0)#wavelength e bbupoll_id
 link_dc_local.set_OLTs([dc_local])
 
 #criar OLT
-#dba = {'name':"Nakayama_DWBA"}
-dba = {'name':"M_DWBA"}
+dba = {'name':"Nakayama_DWBA"}
+#dba = {'name':"M_DWBA"}
 olt = OLT(env,monitoring,0,odn,ONUs,wavelengths,dba,link_dc_local,1500)
 odn.set_ONUs(ONUs)
 odn.set_OLTs([olt])
@@ -65,4 +65,4 @@ bbu = env.process(bbu_sched(olt,bbu_store))
 link_dc_local.set_ONUs([olt])
 
 #start simulation
-env.run(until=0.5)
+env.run(until=1)

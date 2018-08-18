@@ -51,9 +51,11 @@ class Nakayama_DWBA(DBA):
             slot_time = bits/float(self.bandwidth)
             #print("slot_time={:.10f}".format(slot_time))
 
-            self.num_slots = math.floor((self.time_limit - self.granting_start - 0.0001)/float(slot_time))
+            self.num_slots = math.floor((self.time_limit - self.granting_start)/float(slot_time))
             if self.num_slots < 1:
                 print "NUM SLOTS leq 1"
+                slot_time = self.time_limit - self.granting_start
+                self.num_slots = 1
             #print("num_slots={}".format(self.num_slots))
             w = 0
             self.active_wavelenghts.append(self.wavelengths[w])
@@ -137,12 +139,12 @@ class M_DWBA(DBA):
             #max_alloc = max(self.alloc_list, key=lambda x : x['burst'])
             bits = self.alloc_list[0]['pkt'].size  * 8
             slot_time = bits/float(self.bandwidth)
-            print("slot_time={:.10f}".format(slot_time))
+            #print("slot_time={:.10f}".format(slot_time))
 
             self.num_slots = math.floor((self.time_limit - self.granting_start - 0.0001)/float(slot_time))
             if self.num_slots < 1:
                 print "NUM SLOTS leq 1"
-            print("num_slots={}".format(self.num_slots))
+            #print("num_slots={}".format(self.num_slots))
             w = 0
             self.active_wavelenghts.append(self.wavelengths[w])
             slot = 1
