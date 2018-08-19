@@ -32,7 +32,7 @@ class PacketGenerator(object):
         self.ONU = ONU
         self.bbu_store = bbu_store
         self.env = env # Simpy Environment
-        self.cpri_option = cpri_option # Fixed packet size
+        self.cpri_option = None # Fixed packet size
         self.finish = finish # packe end time
         self.packets_sent = 0 # packet counter
         self.eth_overhead = 0.0
@@ -40,10 +40,13 @@ class PacketGenerator(object):
         self.pkt_size = 1250
         self.number_of_burst_pkts = 1
         self.interval = interval #intervalo entres os Ack
-        self.CpriConfig()# set CPRI configurations
+        self.CpriConfig(cpri_option)# set CPRI configurations
         self.action = env.process(self.run())  # starts the run() method as a SimPy process
 
-    def CpriConfig(self):
+    def CpriConfig(self, cpri_option):
+
+        self.cpri_option = cpri_option
+        print("{}:{} - my cpri is {}".format(self.env.now,self.id,self.cpri_option))
         if self.cpri_option == 1:
             self.eth_overhead = 0.00001562
             self.number_of_burst_pkts = 18
