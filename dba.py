@@ -307,15 +307,18 @@ class PM_DWBA(M_DWBA):
             #pred_increment = 0
             for alloc in self.alloc_list:
                 pred_grants = []
+                print("{} - onu {} preds {}".format(self.env.now,alloc['onu'].oid,self.predictions_list[alloc['onu'].oid]))
                 if len(self.predictions_list[alloc['onu'].oid]) == 0:
                     pred = self.predictor(alloc['burst'])
                     if len(pred) > 0:
                         start_next_c = self.env.now + 0.004
 
                         self.predictions_list[alloc['onu'].oid] += pred
+                        print("{} - onu {} preds {}".format(self.env.now,alloc['onu'].oid,self.predictions_list))
                         for i,p in enumerate(pred):
                             if not ( self.cycle +( i+1) in self.cycle_tables.keys() ):
                                 granting_start_next_c = start_next_c + (self.alloc_list[0]['onu'].distance/self.lightspeed)
+                                print("{} - create cycle {} table by pred, onu {}".format(self.env.now,self.cycle +( i+1),alloc['onu'].oid))
                                 self.cycle_tables[self.cycle +( i+1)] = {"table": slot_table(self.num_slots,
                                     self.extra_slots,start_next_c, granting_start_next_c, self.slot_time,self.wavelengths)}
                                 start_next_c += 0.004
@@ -331,6 +334,7 @@ class PM_DWBA(M_DWBA):
                     Gate.append(gate)
                 else:
                     if alloc['burst'] > self.predictions_list[alloc['onu'].oid][0]:
+                        print "is greater"
                         pred_increment = alloc['burst'] > self.predictions_list[alloc['onu'].oid][0]
                         gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[0], 'grant': []}
                         for burst in range(pred_increment):
@@ -341,9 +345,16 @@ class PM_DWBA(M_DWBA):
                         Gate.append(gate)
                         self.predictions_list[alloc['onu'].oid].pop(0)
                     elif alloc['burst'] < self.predictions_list[alloc['onu'].oid][0]:
-                        pass
-                    else:
+                        print "is less"
                         self.predictions_list[alloc['onu'].oid].pop(0)
+                    else:
+                        print "is equal"
+                        print("{} - onu {} - cycle {}".format(self.env.now,alloc['onu'].oid,self.cycle))
+                        self.predictions_list[alloc['onu'].oid].pop(0)
+
+            print "####" *10
+            print self.predictions_list
+            print "####" *10
 
 
 
