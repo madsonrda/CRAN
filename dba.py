@@ -203,13 +203,16 @@ class slot_table(object):
         self.wavelengths = wavelengths
         self.table = None
         self.w = 0
-        self.slot = self.extra_slots
+        self.slot = 0
         self.construct()
 
     def construct(self):
 
         self.table =  [[{}]*(self.extra_slots + self.n_slots)]*len(self.wavelengths)
         #construct extra area
+        print "----"*10
+        print self.start_extra
+        print "----"*10
         for i in range(len(self.wavelengths)):
             next_time = self.start_extra
             for j in range(self.extra_slots):
@@ -234,6 +237,21 @@ class slot_table(object):
         return {'start': self.table[self.w][slot]["start"],
             'end': self.table[self.w][slot]["end"], 'wavelength': self.wavelengths[self.w]}
 
+    def allocate_pred(self,onu):
+        if self.w == len(self.wavelengths):
+            print "acabou w"
+            sys.exit(0)
+        if self.slot == self.extra_slots + self.n_slots:
+            self.w += 1
+            self.slot = 0
+        #print self.table[self.w][self.slot]
+        self.table[self.w][self.slot]["onu"] = onu
+        slot = self.slot
+        self.slot += 1
+        return {'start': self.table[self.w][slot]["start"],
+            'end': self.table[self.w][slot]["end"], 'wavelength': self.wavelengths[self.w]}
+
+
 
 
 
@@ -253,6 +271,7 @@ class PM_DWBA(M_DWBA):
         self.extra_slots = self.tot_slots - self.num_slots
         self.cycle_tables = {}
         self.cycle = 0
+        self.predictions_list = [[]] * len(self.ONUs)
 
 
     def calc_slot_time(self):
@@ -261,26 +280,73 @@ class PM_DWBA(M_DWBA):
         slot_time = bits/float(self.bandwidth)
         return slot_time
 
+    def predictor(self,req_slots):
+        if self.cycle > 10:
+            return [req_slots] * 5
+        else :
+            return []
+
+
     def dwba(self):
         while True:
             yield self.AllocGathering
+            print("{} starts cycle {}".format(self.env.now,self.cycle))
             self.granting_start = self.env.now + (self.alloc_list[0]['onu'].distance/self.lightspeed)
-            self.cycle_tables[self.cycle] = {"table": slot_table(self.num_slots,
-                self.extra_slots,self.env.now, self.granting_start, self.slot_time,self.wavelengths)}
+            if not ( self.cycle in self.cycle_tables.keys() ):
+                self.cycle_tables[self.cycle] = {"table": slot_table(self.num_slots,
+                    self.extra_slots,self.env.now, self.granting_start, self.slot_time,self.wavelengths)}
+                self.cycle_tables[self.cycle]["table"].slot = self.extra_slots
+            elif self.cycle_tables[self.cycle]["table"].slot < self.extra_slots:
+                self.cycle_tables[self.cycle]["table"].slot = self.extra_slots
+
 
 
 
 
             Gate = []
+            #pred_increment = 0
             for alloc in self.alloc_list:
-                gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[0], 'grant': []}
-                for burst in range(alloc['burst']):
+                pred_grants = []
+                if len(self.predictions_list[alloc['onu'].oid]) == 0:
+                    pred = self.predictor(alloc['burst'])
+                    if len(pred) > 0:
+                        start_next_c = self.env.now + 0.004
 
-                    grant = self.cycle_tables[self.cycle]["table"].allocate(alloc['onu'].oid)
-                    #grant = {'start': start, 'end': end, 'wavelength': self.wavelengths[w]}
-                    gate['grant'].append(grant)
+                        self.predictions_list[alloc['onu'].oid] += pred
+                        for i,p in enumerate(pred):
+                            if not ( self.cycle +( i+1) in self.cycle_tables.keys() ):
+                                granting_start_next_c = start_next_c + (self.alloc_list[0]['onu'].distance/self.lightspeed)
+                                self.cycle_tables[self.cycle +( i+1)] = {"table": slot_table(self.num_slots,
+                                    self.extra_slots,start_next_c, granting_start_next_c, self.slot_time,self.wavelengths)}
+                                start_next_c += 0.004
+                            for burst in range(p):
+                                grant = self.cycle_tables[self.cycle +( i+1)]["table"].allocate_pred(alloc['onu'].oid)
+                                pred_grants.append(grant)
+                    gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[0], 'grant': []}
 
-                Gate.append(gate)
+                    for burst in range(alloc['burst']):
+                        grant = self.cycle_tables[self.cycle]["table"].allocate(alloc['onu'].oid)
+                        gate['grant'].append(grant)
+                    gate['grant'] += pred_grants
+                    Gate.append(gate)
+                else:
+                    if alloc['burst'] > self.predictions_list[alloc['onu'].oid][0]:
+                        pred_increment = alloc['burst'] > self.predictions_list[alloc['onu'].oid][0]
+                        gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[0], 'grant': []}
+                        for burst in range(pred_increment):
+
+                            grant = self.cycle_tables[self.cycle]["table"].allocate(alloc['onu'].oid)
+                            #grant = {'start': start, 'end': end, 'wavelength': self.wavelengths[w]}
+                            gate['grant'].append(grant)
+                        Gate.append(gate)
+                        self.predictions_list[alloc['onu'].oid].pop(0)
+                    elif alloc['burst'] < self.predictions_list[alloc['onu'].oid][0]:
+                        pass
+                    else:
+                        self.predictions_list[alloc['onu'].oid].pop(0)
+
+
+
             for w in range(self.cycle_tables[self.cycle]["table"].w):
                 self.active_wavelenghts.append(self.wavelengths[w])
 
@@ -288,3 +354,4 @@ class PM_DWBA(M_DWBA):
             for gate in Gate:
                 self.grant_store.put(gate)
             self.alloc_list = []
+            self.cycle +=1

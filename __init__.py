@@ -18,7 +18,7 @@ from controller import traffic_ctl as tc
 random.seed(50)
 env = simpy.Environment()
 #criar monitor
-monitoring = monitor(env,"M_DWBA")
+monitoring = monitor(env,"PM_DWBA")
 bbu_store = simpy.Store(env)
 #criar ODN
 odn = ODN(env)
@@ -54,7 +54,7 @@ link_dc_local.set_OLTs([dc_local])
 
 #criar OLT
 #dba = {'name':"Nakayama_DWBA"}
-dba = {'name':"M_DWBA"}
+dba = {'name':"PM_DWBA"}
 olt = OLT(env,monitoring,0,odn,ONUs,wavelengths,dba,link_dc_local,1500)
 odn.set_ONUs(ONUs)
 odn.set_OLTs([olt])
@@ -65,6 +65,6 @@ def bbu_sched(olt,bbu_store):
 bbu = env.process(bbu_sched(olt,bbu_store))
 link_dc_local.set_ONUs([olt])
 
-tc(env,pkt_gen,0.5)
+#tc(env,pkt_gen,0.5)
 #start simulation
 env.run(until=1.5)
