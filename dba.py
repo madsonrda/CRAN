@@ -192,3 +192,99 @@ class M_DWBA(DBA):
                 self.active_wavelenghts = []
                 self.AllocGathering.succeed()
                 self.AllocGathering = self.env.event()
+
+class slot_table(object):
+    def __init__(self,n_slots,extra_slots,start_extra, start_grant, slot_time,wavelengths):
+        self.n_slots = n_slots
+        self.extra_slots = extra_slots
+        self.start_extra = start_extra
+        self.start_grant  = start_grant
+        self.slot_time = slot_time
+        self.wavelengths = wavelengths
+        self.table = None
+        self.w = 0
+        self.slot = self.extra_slots
+        self.construct()
+
+    def construct(self):
+
+        self.table =  [[{}]*(self.extra_slots + self.n_slots)]*len(self.wavelengths)
+        #construct extra area
+        for i in range(len(self.wavelengths)):
+            next_time = self.start_extra
+            for j in range(self.extra_slots):
+                self.table[i][j] = {"onu": None, "start": next_time, "end": next_time + self.slot_time}
+                next_time = next_time + self.slot_time
+        for i in range(len(self.wavelengths)):
+            next_time = self.start_grant
+            for j in range(self.extra_slots,self.extra_slots + self.n_slots):
+                self.table[i][j] = {"onu": None, "start": next_time, "end": next_time + self.slot_time}
+                next_time = next_time + self.slot_time
+    def allocate(self,onu):
+        if self.w == len(self.wavelengths):
+            print "acabou w"
+            sys.exit(0)
+        if self.slot == self.extra_slots + self.n_slots:
+            self.w += 1
+            self.slot = self.extra_slots
+        #print self.table[self.w][self.slot]
+        self.table[self.w][self.slot]["onu"] = onu
+        slot = self.slot
+        self.slot += 1
+        return {'start': self.table[self.w][slot]["start"],
+            'end': self.table[self.w][slot]["end"], 'wavelength': self.wavelengths[self.w]}
+
+
+
+
+class PM_DWBA(M_DWBA):
+    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs):
+        M_DWBA.__init__(self,env,monitoring,grant_store,wavelengths,ONUs)
+        # self.window = 5    # past observations window size
+        # self.predict = 10 # number of predictions
+        # self.grant_history = range(len(self.ONUs)) #grant history per ONU (training set)
+        # self.predictions_array = []
+        # for i in range(NUMBER_OF_ONUs):
+        #     # training unit
+        #     self.grant_history[i] = {'counter': [], 'start': [], 'end': []}
+        self.slot_time = self.calc_slot_time()
+        self.num_slots = int(math.floor((self.time_limit - 0.0002)/float(self.slot_time)))
+        self.tot_slots = int(math.floor((self.time_limit - 0.0001)/float(self.slot_time)))
+        self.extra_slots = self.tot_slots - self.num_slots
+        self.cycle_tables = {}
+        self.cycle = 0
+
+
+    def calc_slot_time(self):
+
+        bits = 1250  * 8
+        slot_time = bits/float(self.bandwidth)
+        return slot_time
+
+    def dwba(self):
+        while True:
+            yield self.AllocGathering
+            self.granting_start = self.env.now + (self.alloc_list[0]['onu'].distance/self.lightspeed)
+            self.cycle_tables[self.cycle] = {"table": slot_table(self.num_slots,
+                self.extra_slots,self.env.now, self.granting_start, self.slot_time,self.wavelengths)}
+
+
+
+
+            Gate = []
+            for alloc in self.alloc_list:
+                gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[0], 'grant': []}
+                for burst in range(alloc['burst']):
+
+                    grant = self.cycle_tables[self.cycle]["table"].allocate(alloc['onu'].oid)
+                    #grant = {'start': start, 'end': end, 'wavelength': self.wavelengths[w]}
+                    gate['grant'].append(grant)
+
+                Gate.append(gate)
+            for w in range(self.cycle_tables[self.cycle]["table"].w):
+                self.active_wavelenghts.append(self.wavelengths[w])
+
+            self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelenghts))
+            for gate in Gate:
+                self.grant_store.put(gate)
+            self.alloc_list = []

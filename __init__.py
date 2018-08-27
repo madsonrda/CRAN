@@ -31,19 +31,19 @@ for w in wavelengths:
     odn.create_wavelength(w)
 #criar ONU
 ONUs = []
-for i in range(60):
+for i in range(3):
     ONUs.append(ONU(i,env,monitoring,wavelengths,20,odn))
 
 #criar PacketGenerator
 
 pkt_gen = []
-for i in range(60):
+for i in range(3):
     #pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,random.randint(1,2)))
     pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,1))
 
 #criar dc local
 dc_local = BBUPool(env,0,2000)
-for i in range(60):
+for i in range(3):
     dc_local.add_bbu(i)
 
 #criar link entre a OLT e o BBU POOL
