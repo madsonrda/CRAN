@@ -248,6 +248,7 @@ class slot_table(object):
         self.table[self.w][self.slot]["onu"] = onu
         slot = self.slot
         self.slot += 1
+        print("alloc pred next slot is {}, extra is {}".format(self.slot,self.extra_slots))
         return {'start': self.table[self.w][slot]["start"],
             'end': self.table[self.w][slot]["end"], 'wavelength': self.wavelengths[self.w]}
 
@@ -271,7 +272,9 @@ class PM_DWBA(M_DWBA):
         self.extra_slots = self.tot_slots - self.num_slots
         self.cycle_tables = {}
         self.cycle = 0
-        self.predictions_list = [[]] * len(self.ONUs)
+        self.predictions_list = []
+        for i in range(len(self.ONUs)):
+            self.predictions_list.append([])
 
 
     def calc_slot_time(self):
@@ -296,7 +299,11 @@ class PM_DWBA(M_DWBA):
                 self.cycle_tables[self.cycle] = {"table": slot_table(self.num_slots,
                     self.extra_slots,self.env.now, self.granting_start, self.slot_time,self.wavelengths)}
                 self.cycle_tables[self.cycle]["table"].slot = self.extra_slots
+                print "entrei aqui"
             elif self.cycle_tables[self.cycle]["table"].slot < self.extra_slots:
+                print "XXXX"*10
+                print "kk   "
+                print "XXXX"*10
                 self.cycle_tables[self.cycle]["table"].slot = self.extra_slots
 
 
@@ -327,6 +334,7 @@ class PM_DWBA(M_DWBA):
                                 pred_grants.append(grant)
                     gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[0], 'grant': []}
 
+                    print("next free slot is {}".format(self.cycle_tables[self.cycle]["table"].slot))
                     for burst in range(alloc['burst']):
                         grant = self.cycle_tables[self.cycle]["table"].allocate(alloc['onu'].oid)
                         gate['grant'].append(grant)
@@ -335,7 +343,7 @@ class PM_DWBA(M_DWBA):
                 else:
                     if alloc['burst'] > self.predictions_list[alloc['onu'].oid][0]:
                         print "is greater"
-                        pred_increment = alloc['burst'] > self.predictions_list[alloc['onu'].oid][0]
+                        pred_increment = alloc['burst'] - self.predictions_list[alloc['onu'].oid][0]
                         gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[0], 'grant': []}
                         for burst in range(pred_increment):
 

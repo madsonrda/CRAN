@@ -65,6 +65,6 @@ def bbu_sched(olt,bbu_store):
 bbu = env.process(bbu_sched(olt,bbu_store))
 link_dc_local.set_ONUs([olt])
 
-#tc(env,pkt_gen,0.5)
+tc(env,pkt_gen,0.5)
 #start simulation
 env.run(until=1.5)
