@@ -51,7 +51,7 @@ class Nakayama_DWBA(DBA):
             slot_time = bits/float(self.bandwidth)
             #print("slot_time={:.10f}".format(slot_time))
 
-            self.num_slots = math.floor((self.time_limit - self.granting_start)/float(slot_time))
+            self.num_slots = math.floor((self.time_limit - self.granting_start - 0.0001)/float(slot_time))
             if self.num_slots < 1:
                 print "NUM SLOTS leq 1"
                 slot_time = self.time_limit - self.granting_start
@@ -313,6 +313,7 @@ class PM_DWBA(M_DWBA):
             Gate = []
             #pred_increment = 0
             for alloc in self.alloc_list:
+                self.monitoring.required_slots(self.cycle,alloc['burst'],alloc['onu'].oid)
                 pred_grants = []
                 print("{} - onu {} preds {}".format(self.env.now,alloc['onu'].oid,self.predictions_list[alloc['onu'].oid]))
                 if len(self.predictions_list[alloc['onu'].oid]) == 0:

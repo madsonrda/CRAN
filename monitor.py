@@ -13,6 +13,9 @@ class monitor(object):
         self.fronthaul_dwba_wavelengths.write("active,timestamp\n")
         self.grant_idle_file = open("{}-grant-usage.csv".format(FILENAME),"w")
         self.grant_idle_file.write("idle,slot,usage,timestamp\n")
+        self.required_slots_file = open("{}-required-slots.csv".format(FILENAME),"w")
+        self.required_slots_file.write("onu,cycle,slots,timestamp\n")
+
 
     def get_delay(self,pkt_time):
         return (self.env.now - pkt_time)
@@ -36,3 +39,6 @@ class monitor(object):
             #print consumption
             #print "XXXXX"
         self.grant_idle_file.write("{},{},{},{}\n".format(idle,slot,usage,self.env.now))
+
+    def required_slots(self,cycle,slots,onu):
+        self.required_slots_file.write("{},{},{},{}\n".format(onu,cycle,slots,self.env.now))
