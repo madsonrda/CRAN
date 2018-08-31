@@ -261,11 +261,11 @@ class PM_DWBA(M_DWBA):
         M_DWBA.__init__(self,env,monitoring,grant_store,wavelengths,ONUs)
         # self.window = 5    # past observations window size
         # self.predict = 10 # number of predictions
-        # self.grant_history = range(len(self.ONUs)) #grant history per ONU (training set)
+        #self.grant_history = range(len(self.ONUs)) #grant history per ONU (training set)
         # self.predictions_array = []
-        # for i in range(NUMBER_OF_ONUs):
+        # for i in range(len(self.ONUs)):
         #     # training unit
-        #     self.grant_history[i] = {'counter': [], 'start': [], 'end': []}
+        #self.grant_history[i] = {'cycle': [],  'slots': []}
         self.slot_time = self.calc_slot_time()
         self.num_slots = int(math.floor((self.time_limit - 0.0002)/float(self.slot_time)))
         self.tot_slots = int(math.floor((self.time_limit - 0.0001)/float(self.slot_time)))

@@ -15,24 +15,35 @@ class traffic_ctl(object):
 
     def increase(self,end):
         print "ENTREI   "
-        while self.env.now < end:
-            print "--"*5
-            print end
-            print self.cpri_option
-            print self.env.now
-            print "--"*5
-            if self.env.now > 0.49:
+        dist = zip(range(len(self.traffic_gen_list))*4,[ random.expovariate(500) for i in range(len(self.traffic_gen_list))*4])
+        for i,j in dist:
+            yield self.env.timeout(j)
+            gen = self.traffic_gen_list[i]
+            gen.CpriConfig(gen.cpri_option +1 )
+            if self.env.now > 0.499:
                 break
+
+
+        # while self.env.now < end:
+        #     print "--"*5
+        #     print end
+        #     print self.cpri_option
+        #     print self.env.now
+        #     print "--"*5
+        #     if self.env.now > 0.49:
+        #         break
+
+
             #yield self.env.timeout(self.tempo/4.0)
-            for gen in self.traffic_gen_list:
-                yield self.env.timeout((self.tempo/4.0)/float(len(self.traffic_gen_list)))
-                gen.CpriConfig(self.cpri_option)
-            self.cpri_option += 1
-            print("aumentei para {}".format(self.cpri_option))
-            print self.env.now
-            if self.cpri_option > 6:
-                print "maior que 6"
-                self.cpri_option = 6
+            # for gen in self.traffic_gen_list:
+            #     yield self.env.timeout((self.tempo/4.0)/float(len(self.traffic_gen_list)))
+            #     gen.CpriConfig(self.cpri_option)
+            # self.cpri_option += 1
+            # print("aumentei para {}".format(self.cpri_option))
+            # print self.env.now
+            # if self.cpri_option > 6:
+            #     print "maior que 6"
+            #     self.cpri_option = 6
 
     def constant(self,end):
         # for gen in self.traffic_gen_list:
@@ -42,24 +53,34 @@ class traffic_ctl(object):
 
     def decrease(self,end):
 
+        dist = zip(range(len(self.traffic_gen_list))*4,[ random.expovariate(500) for i in range(len(self.traffic_gen_list))*4])
+        for i,j in dist:
+            yield self.env.timeout(j)
+            gen = self.traffic_gen_list[i]
 
-        while self.env.now < end:
+            cpri = gen.cpri_option -1
+            if cpri < 1:
+                cpri = 1
+            gen.CpriConfig(cpri)
 
 
-        #    yield self.env.timeout(self.tempo/4.0)
-            self.cpri_option -= 1
-            print "--"*5
-            print end
-            print self.cpri_option
-            print self.env.now
-            print "--"*5
-            print("reduzi para {}".format(self.cpri_option))
-            if self.cpri_option < 1:
-                print "menor que 1"
-                self.cpri_option = 1
-            for gen in self.traffic_gen_list:
-                yield self.env.timeout((self.tempo/4.0)/float(len(self.traffic_gen_list)))
-                gen.CpriConfig(self.cpri_option)
+        # while self.env.now < end:
+        #
+        #
+        # #    yield self.env.timeout(self.tempo/4.0)
+        #     self.cpri_option -= 1
+        #     print "--"*5
+        #     print end
+        #     print self.cpri_option
+        #     print self.env.now
+        #     print "--"*5
+        #     print("reduzi para {}".format(self.cpri_option))
+        #     if self.cpri_option < 1:
+        #         print "menor que 1"
+        #         self.cpri_option = 1
+        #     for gen in self.traffic_gen_list:
+        #         yield self.env.timeout((self.tempo/4.0)/float(len(self.traffic_gen_list)))
+        #         gen.CpriConfig(self.cpri_option)
 
 
 
