@@ -3,6 +3,10 @@ import simpy
 import random
 import math
 import sys
+from sklearn import linear_model
+import pandas as pd
+import numpy as np
+
 
 class DBA(object):
     """DBA Parent class, heritated by every kind of DBA"""
@@ -261,11 +265,11 @@ class PM_DWBA(M_DWBA):
         M_DWBA.__init__(self,env,monitoring,grant_store,wavelengths,ONUs)
         # self.window = 5    # past observations window size
         # self.predict = 10 # number of predictions
-        #self.grant_history = range(len(self.ONUs)) #grant history per ONU (training set)
+        self.grant_history = range(len(self.ONUs)) #grant history per ONU (training set)
         # self.predictions_array = []
-        # for i in range(len(self.ONUs)):
+        for i in range(len(self.ONUs)):
         #     # training unit
-        #self.grant_history[i] = {'cycle': [],  'slots': []}
+            self.grant_history[i] = {'cycle': [],  'slots': []}
         self.slot_time = self.calc_slot_time()
         self.num_slots = int(math.floor((self.time_limit - 0.0002)/float(self.slot_time)))
         self.tot_slots = int(math.floor((self.time_limit - 0.0001)/float(self.slot_time)))
@@ -283,9 +287,21 @@ class PM_DWBA(M_DWBA):
         slot_time = bits/float(self.bandwidth)
         return slot_time
 
-    def predictor(self,req_slots):
-        if self.cycle > 10:
-            return [req_slots] * 5
+    def predictor(self,onu):
+        if len( self.grant_history[onu]['cycle']) > 5:
+            #return [req_slots] * 20
+            self.grant_history[onu]['cycle'] = self.grant_history[onu]['cycle'][-5:]
+            self.grant_history[onu]['slots'] = self.grant_history[onu]['slots'][-5:]
+            df_tmp = pd.DataFrame(self.grant_history[onu]) # temp dataframe w/ past grants
+            X_pred = np.arange(self.grant_history[onu]['cycle'][-1] +1,
+                self.grant_history[onu]['cycle'][-1] + 1 + 5).reshape(-1,1)
+
+            # model fitting
+            model = linear_model.LinearRegression()
+            model.fit( np.array( df_tmp['cycle'] ).reshape(-1,1) , df_tmp['slots'] )
+            pred = model.predict(X_pred) # predicting start and end
+            return map(int,pred)
+
         else :
             return []
 
@@ -314,10 +330,12 @@ class PM_DWBA(M_DWBA):
             #pred_increment = 0
             for alloc in self.alloc_list:
                 self.monitoring.required_slots(self.cycle,alloc['burst'],alloc['onu'].oid)
+                self.grant_history[alloc['onu'].oid]['cycle'].append(self.cycle)
+                self.grant_history[alloc['onu'].oid]['slots'].append(alloc['burst'])
                 pred_grants = []
                 print("{} - onu {} preds {}".format(self.env.now,alloc['onu'].oid,self.predictions_list[alloc['onu'].oid]))
                 if len(self.predictions_list[alloc['onu'].oid]) == 0:
-                    pred = self.predictor(alloc['burst'])
+                    pred = self.predictor(alloc['onu'].oid)
                     if len(pred) > 0:
                         start_next_c = self.env.now + 0.004
 
