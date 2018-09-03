@@ -80,6 +80,7 @@ class PacketGenerator(object):
         else: #
             self.eth_overhead = 0
             self.number_of_burst_pkts = 1
+            self.pkt_size = 9422
 
     def run(self):
         """The generator function used in simulations.

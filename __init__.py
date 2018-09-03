@@ -13,15 +13,15 @@ from controller import traffic_ctl as tc
 
 
 
-
+cpri = int(sys.argv[1])
 #criar env
 random.seed(50)
 env = simpy.Environment()
 #criar monitor
-monitoring = monitor(env,"PM_DWBA")
+monitoring = monitor(env,"PM_DWBA-50-{}-60".format(cpri))
 bbu_store = simpy.Store(env)
 #criar ODN
-odn = ODN(env)
+odn = ODN(env,monitoring)
 #criar wavelengths
 wavelengths = []
 for i in range(1000):
@@ -38,8 +38,8 @@ for i in range(60):
 
 pkt_gen = []
 for i in range(60):
-    #pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,random.randint(1,2)))
-    pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,1))
+    pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,random.randint(1,cpri)))
+    #pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,3))
 
 #criar dc local
 dc_local = BBUPool(env,0,2000)
@@ -47,7 +47,7 @@ for i in range(60):
     dc_local.add_bbu(i)
 
 #criar link entre a OLT e o BBU POOL
-link_dc_local = ODN(env)
+link_dc_local = ODN(env,monitoring)
 link_dc_local.create_wavelength(1500)#wavelength = 150
 link_dc_local.activate_wavelenght(1500,0)#wavelength e bbupoll_id
 link_dc_local.set_OLTs([dc_local])
@@ -66,6 +66,6 @@ def bbu_sched(olt,bbu_store):
 bbu = env.process(bbu_sched(olt,bbu_store))
 link_dc_local.set_ONUs([olt])
 
-tc(env,pkt_gen,0.5)
+#tc(env,pkt_gen,0.5)
 #start simulation
-env.run(until=1.5)
+env.run(until=1)

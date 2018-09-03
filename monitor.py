@@ -15,6 +15,8 @@ class monitor(object):
         self.grant_idle_file.write("idle,slot,usage,timestamp\n")
         self.required_slots_file = open("{}-required-slots.csv".format(FILENAME),"w")
         self.required_slots_file.write("onu,cycle,slots,timestamp\n")
+        self.pkt_sent_file = open("{}-pkt-sent.csv".format(FILENAME),"w")
+        self.pkt_sent_file.write("wavelength,size,timestamp\n")
 
 
     def get_delay(self,pkt_time):
@@ -22,8 +24,12 @@ class monitor(object):
     def fronthaul_delay(self,pkt_time):
         #print self.env.now
         delay = self.get_delay(pkt_time)
-        #print delay < 0.000250
-        #print 'delay'
+        if delay > 0.000250:
+            print "..."*10
+            print self.env.now
+            print ""
+            print delay
+            print "..."*10
         #print delay
         self.fronthaul_delay_file.write("{},{}\n".format(delay,self.env.now))
     def fronthaul_active_wavelengths(self,wavelengths):
@@ -42,3 +48,5 @@ class monitor(object):
 
     def required_slots(self,cycle,slots,onu):
         self.required_slots_file.write("{},{},{},{}\n".format(onu,cycle,slots,self.env.now))
+    def pkt_sent(self,pkt_size,wavelength):
+        self.pkt_sent_file.write("{},{},{}\n".format(wavelength,pkt_size,self.env.now))

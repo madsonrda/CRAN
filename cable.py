@@ -5,12 +5,13 @@ import random
 class ODN(object):
     """This class represents optical distribution Network."""
     #{'lambda':{active: int,OLT_id: int, ONU_dict: {oid,distance}, }}
-    def __init__(self, env):
+    def __init__(self, env,monitoring):
         self.env = env
         self.wavelengths = {}
         self.OLTs = None
         self.ONUs = None
         self.lightspeed = float(200000)
+        self.monitoring = monitoring
         #self.upstream = simpy.Store(self.env)
         #self.downstream = simpy.Store(self.env)
         #self.up_proc = self.env.process(self.UpStream())
@@ -55,6 +56,7 @@ class ODN(object):
             onu,pkt,wavelength = yield self.wavelengths[wavelength]['upstream'].get()
             ##print "up"
             #print("{} - up at {}".format(onu,self.env.now))
+            self.monitoring.pkt_sent(pkt.size,wavelength)
             self.env.process( self.splitter_up(onu,wavelength,pkt) )
 
     def DownStream(self,wavelength):

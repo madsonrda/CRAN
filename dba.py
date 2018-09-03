@@ -55,7 +55,8 @@ class Nakayama_DWBA(DBA):
             slot_time = bits/float(self.bandwidth)
             #print("slot_time={:.10f}".format(slot_time))
 
-            self.num_slots = math.floor((self.time_limit - self.granting_start - 0.0001)/float(slot_time))
+            #self.num_slots = math.floor((self.time_limit - self.granting_start - 0.0001)/float(slot_time))
+            self.num_slots = math.floor((self.time_limit - self.granting_start)/float(slot_time))
             if self.num_slots < 1:
                 print "NUM SLOTS leq 1"
                 slot_time = self.time_limit - self.granting_start
@@ -272,6 +273,8 @@ class PM_DWBA(M_DWBA):
             self.grant_history[i] = {'cycle': [],  'slots': []}
         self.slot_time = self.calc_slot_time()
         self.num_slots = int(math.floor((self.time_limit - 0.0002)/float(self.slot_time)))
+        if self.num_slots < 1:
+            print "NUM SLOTS leq 1"
         self.tot_slots = int(math.floor((self.time_limit - 0.0001)/float(self.slot_time)))
         self.extra_slots = self.tot_slots - self.num_slots
         self.cycle_tables = {}
@@ -284,6 +287,7 @@ class PM_DWBA(M_DWBA):
     def calc_slot_time(self):
 
         bits = 1250  * 8
+        #bits = 9422  * 8
         slot_time = bits/float(self.bandwidth)
         return slot_time
 
@@ -294,7 +298,7 @@ class PM_DWBA(M_DWBA):
             self.grant_history[onu]['slots'] = self.grant_history[onu]['slots'][-5:]
             df_tmp = pd.DataFrame(self.grant_history[onu]) # temp dataframe w/ past grants
             X_pred = np.arange(self.grant_history[onu]['cycle'][-1] +1,
-                self.grant_history[onu]['cycle'][-1] + 1 + 5).reshape(-1,1)
+                self.grant_history[onu]['cycle'][-1] + 1 + 20).reshape(-1,1)
 
             # model fitting
             model = linear_model.LinearRegression()
@@ -311,6 +315,7 @@ class PM_DWBA(M_DWBA):
             yield self.AllocGathering
             print("{} starts cycle {}".format(self.env.now,self.cycle))
             self.granting_start = self.env.now + (self.alloc_list[0]['onu'].distance/self.lightspeed)
+
             if not ( self.cycle in self.cycle_tables.keys() ):
                 self.cycle_tables[self.cycle] = {"table": slot_table(self.num_slots,
                     self.extra_slots,self.env.now, self.granting_start, self.slot_time,self.wavelengths)}
