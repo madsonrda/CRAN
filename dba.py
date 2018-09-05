@@ -77,6 +77,7 @@ class Nakayama_DWBA(DBA):
                 slot +=1
                 start = end
                 if slot > self.num_slots:
+                    self.monitoring.grant_usage(end,self.time_limit,0)
                     w +=1
                     try:
                         self.active_wavelenghts.append(self.wavelengths[w])

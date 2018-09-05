@@ -18,7 +18,7 @@ cpri = int(sys.argv[1])
 random.seed(50)
 env = simpy.Environment()
 #criar monitor
-monitoring = monitor(env,"PM_DWBA-50-{}-60".format(cpri))
+monitoring = monitor(env,"Nakayama_DWBA-80-{}-60".format(cpri))
 bbu_store = simpy.Store(env)
 #criar ODN
 odn = ODN(env,monitoring)
@@ -53,8 +53,8 @@ link_dc_local.activate_wavelenght(1500,0)#wavelength e bbupoll_id
 link_dc_local.set_OLTs([dc_local])
 
 #criar OLT
-#dba = {'name':"Nakayama_DWBA"}
-dba = {'name':"PM_DWBA"}
+dba = {'name':"Nakayama_DWBA"}
+#dba = {'name':"PM_DWBA"}
 #dba = {'name':"M_DWBA"}
 olt = OLT(env,monitoring,0,odn,ONUs,wavelengths,dba,link_dc_local,1500)
 odn.set_ONUs(ONUs)
