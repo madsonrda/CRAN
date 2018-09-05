@@ -18,7 +18,7 @@ cpri = int(sys.argv[1])
 random.seed(50)
 env = simpy.Environment()
 #criar monitor
-monitoring = monitor(env,"Nakayama_DWBA-80-{}-60".format(cpri))
+monitoring = monitor(env,"PM_DWBAv-50-{}-60".format(cpri))
 bbu_store = simpy.Store(env)
 #criar ODN
 odn = ODN(env,monitoring)
@@ -38,8 +38,8 @@ for i in range(60):
 
 pkt_gen = []
 for i in range(60):
-    pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,random.randint(1,cpri)))
-    #pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,3))
+    #pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,random.randint(1,cpri)))
+    pkt_gen.append(PacketGenerator(env,i,ONUs[i],bbu_store,1))
 
 #criar dc local
 dc_local = BBUPool(env,0,2000)
@@ -53,8 +53,8 @@ link_dc_local.activate_wavelenght(1500,0)#wavelength e bbupoll_id
 link_dc_local.set_OLTs([dc_local])
 
 #criar OLT
-dba = {'name':"Nakayama_DWBA"}
-#dba = {'name':"PM_DWBA"}
+#dba = {'name':"Nakayama_DWBA"}
+dba = {'name':"PM_DWBA"}
 #dba = {'name':"M_DWBA"}
 olt = OLT(env,monitoring,0,odn,ONUs,wavelengths,dba,link_dc_local,1500)
 odn.set_ONUs(ONUs)
@@ -66,6 +66,6 @@ def bbu_sched(olt,bbu_store):
 bbu = env.process(bbu_sched(olt,bbu_store))
 link_dc_local.set_ONUs([olt])
 
-#tc(env,pkt_gen,0.5)
+tc(env,pkt_gen,0.5)
 #start simulation
-env.run(until=1)
+env.run(until=1.5)

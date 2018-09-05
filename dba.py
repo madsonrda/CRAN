@@ -35,6 +35,7 @@ class Nakayama_DWBA(DBA):
         self.dwba_proc = self.env.process(self.dwba())
         self.AllocGathering = self.env.event()
         self.alloc_counter = 0
+        self.cycle = 0
 
     def dwba(self):
         #alloc_signal{ONU,pkt,burst}
@@ -93,6 +94,8 @@ class Nakayama_DWBA(DBA):
             for gate in Gate:
                 self.grant_store.put(gate)
             self.alloc_list = []
+            self.cycle +=1
+            self.monitoring.cycle = self.cycle
 
 
 
@@ -127,6 +130,7 @@ class M_DWBA(DBA):
         self.dwba_proc = self.env.process(self.dwba())
         self.AllocGathering = self.env.event()
         self.alloc_counter = 0
+        self.cycle = 0
 
     def dwba(self):
         #alloc_signal{ONU,pkt,burst}
@@ -182,6 +186,8 @@ class M_DWBA(DBA):
             for gate in Gate:
                 self.grant_store.put(gate)
             self.alloc_list = []
+            self.cycle +=1
+            self.monitoring.cycle = self.cycle
 
 
 
@@ -399,3 +405,4 @@ class PM_DWBA(M_DWBA):
                 self.grant_store.put(gate)
             self.alloc_list = []
             self.cycle +=1
+            self.monitoring.cycle = self.cycle
