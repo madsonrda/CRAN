@@ -2,6 +2,8 @@ import time
 import simpy
 import random
 from dba import *
+import logging as log
+import simtime as l
 
 class OLT(object):
     """Optical line terminal"""
@@ -43,9 +45,9 @@ class OLT(object):
         """A process which sends a grant message to ONU"""
         while True:
             msg = yield self.grant_store.get() # receive grant from dba
-            print("{} - grant enviado - {}".format(msg['id'],self.env.now))
+            #print("{} - grant enviado - {}".format(msg['id'],self.env.now))
             #print msg
-            self.odn.activate_wavelenght(msg['wavelength'],self.olt_number)
+            self.odn.activate_wavelength(msg['wavelength'],self.olt_number)
             self.odn.wavelengths[msg['wavelength']]['downstream'].put(msg) # send grant to odn
 
     def OLT_ULDataReceiver(self):

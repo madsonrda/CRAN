@@ -1,3 +1,5 @@
+import arguments
+from logcontrol import *
 import time
 import simpy
 import random
@@ -9,6 +11,24 @@ from onu import ONU
 from bbupool import BBUPool
 from traffic_gen import PacketGenerator, Packet
 from monitor import monitor
+
+bla = {'time': 0}
+FORMAT = "%(levelname)s: %(asctime)s at SIMTIME:%(time)f = %(message)s"
+
+log.basicConfig(format=FORMAT,filename='example.log',level=log.DEBUG) # filemode='w'
+
+DURATION = DURATION * 1000 # transforming second to ms
+BWMID = BWMID * 1000 # transforming GB to MB
+INTERVAL = INTERVAL * 1000 # transforming second to ms
+LTHOLD = LTHOLD/100.0
+HTHOLD = HTHOLD/100.0
+
+##### SIMULATION FLAGS: #####
+
+#Disable logging by uncommenting below
+#log.disable(True)
+
+#############################
 
 #pega sinalizacao pro grant do mdba 
 def bbu_sched(olt,bbu_store):
@@ -31,7 +51,7 @@ dc_central = BBUPool(env,dc_central_id,250)
 #######
 #DC LOCAL 1
 
-for i in range(30):
+for i in range(3):
     dc_central.add_bbu(i)
 
 wavelength1 = 200
@@ -39,14 +59,14 @@ wavelength1 = 200
 #criar link entre a DC-LOCAL e o DC-CENTRAL
 link_midhaul1 = ODN(env,monitoring,"midhaul1")
 link_midhaul1.create_wavelength(wavelength1,dc_central_id)#wavelength = 200
-link_midhaul1.activate_wavelenght(wavelength1,dc_central_id)#wavelength e bbupoll_id
+link_midhaul1.activate_wavelength(wavelength1,dc_central_id)#wavelength e bbupoll_id
 
 #criar dc local 1
 split1=3
 distance1 = 10
 dc_local1 = BBUPool(env,1,wavelength1,split1,link_midhaul1,distance1)
 #dc_local1_cells = 30
-for i in range(30):
+for i in range(3):
     dc_local1.add_bbu(i)
 
 link_midhaul1.set_Bside_nodes({0:dc_central})
@@ -65,18 +85,18 @@ for w in wavelengths1:
     fronthaul1.create_wavelength(w,0)
 #criar ONUs
 ONUs1 = {}
-for i in range(30):
+for i in range(3):
     ONUs1[i]=ONU(i,env,monitoring,wavelengths1,20,fronthaul1)
 
 #criar PacketGenerator
 pkt_gen1 = []
-for i in range(30):
+for i in range(3):
     pkt_gen1.append(PacketGenerator(env,i,ONUs1[i],bbu_store1,random.randint(1,3)))
 
 #criar link entre a OLT e o BBU POOL
 link_dc_local1 = ODN(env,monitoring,"link_dc_local1")
 link_dc_local1.create_wavelength(150,1)#wavelength = 150
-link_dc_local1.activate_wavelenght(150,1)#wavelength e bbupoll_id
+link_dc_local1.activate_wavelength(150,1)#wavelength e bbupoll_id
 link_dc_local1.set_Bside_nodes({1:dc_local1})
 
 #criar OLT
@@ -93,7 +113,7 @@ bbu1 = env.process(bbu_sched(olt1,bbu_store1))
 ################################
 #DC LOCAL 2
 
-for i in range(30,60):
+for i in range(3,6):
     dc_central.add_bbu(i)
 
 split2=1
@@ -101,14 +121,14 @@ wavelength2=201
 #criar link entre a DC-LOCAL e o DC-CENTRAL
 link_midhaul2 = ODN(env,monitoring,"link_midhaul2")
 link_midhaul2.create_wavelength(wavelength2,dc_central_id)
-link_midhaul2.activate_wavelenght(wavelength2,dc_central_id)#wavelength e bbupoll_id
+link_midhaul2.activate_wavelength(wavelength2,dc_central_id)#wavelength e bbupoll_id
 
 distance2 = 10
 
 #criar dc local 1
 dc_local2 = BBUPool(env,2,wavelength2,split2,link_midhaul2,distance2)
 #dc_local1_cells = 30
-for i in range(30,60):
+for i in range(3,6):
     dc_local2.add_bbu(i)
 
 link_midhaul2.set_Bside_nodes({0:dc_central})
@@ -127,18 +147,18 @@ for w in wavelengths2:
     fronthaul2.create_wavelength(w,1)
 #criar ONUs
 ONUs2 = {}
-for i in range(30,60):
+for i in range(3,6):
     ONUs2[i] = ONU(i,env,monitoring,wavelengths2,20,fronthaul2)
 
 #criar PacketGenerator
 pkt_gen2 = []
-for i in range(30,60):
+for i in range(3,6):
 	pkt_gen2.append(PacketGenerator(env,i,ONUs2[i],bbu_store2,random.randint(1,3)))
 
 #criar link entre a OLT e o BBU POOL
 link_dc_local2 = ODN(env,monitoring,"link_dc_local2")
 link_dc_local2.create_wavelength(151,2)#wavelength = 150
-link_dc_local2.activate_wavelenght(151,2)#wavelength e bbupoll_id
+link_dc_local2.activate_wavelength(151,2)#wavelength e bbupoll_id
 link_dc_local2.set_Bside_nodes({2:dc_local2})
 
 #criar OLT

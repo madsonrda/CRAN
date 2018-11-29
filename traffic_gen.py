@@ -1,12 +1,14 @@
 import time
 import simpy
 import random
-
+import logging as log
 import ltecpricalcs as calc
+import simtime as l
+import math
 
 class Packet(object):
     """ This class represents a network packet """
-    def __init__(self, time, size,id, cpri_option,split=1,coding=28,src="a", dst="z", interval=0.004):
+    def __init__(self, time, size,id, cpri_option,split=1,coding=23,src="a", dst="z", interval=0.004, mtu=1500):
         self.time = time# creation time
         self.id = id # packet id
         self.src = src #packet source address
@@ -15,11 +17,13 @@ class Packet(object):
         self.interval = interval
 
         #BRUNO
+        self.mtu = mtu
         self.split = split
         self.cpri_option = cpri_option # Fixed packet size
-        self.coding = coding #same as MCS        
-        #pkt_size=(calc.splits_info[self.coding][self.cpri_option][1]['bw'])
-        #self.size = calc.size_byte(pkt_size,self.interval)
+        self.coding = coding #same as MCS
+        size_mbps=(calc.UL_splits[str(self.cpri_option)][1]['bw']) * interval
+        self.size = calc.size_bits(size_mbps)
+        #print "SIZE PKT: %f" % self.size
         #self.prb = calc.CPRI[self.cpri_option]['PRB']
         #BRUNO
 
@@ -39,50 +43,34 @@ class PacketGenerator(object):
         self.packets_sent = 0 # packet counter
         self.eth_overhead = 0.0
         #self.pkt_size = 306000  #CPRI 1 pkt size
-        self.pkt_size = 1250
+        self.pkt_size = 1500 # ethernet MTU SIZE
         self.number_of_burst_pkts = 1
         self.interval = interval #intervalo entres os Ack
-        self.CpriConfig(cpri_option)# set CPRI configurations
+        self.CpriConfig(cpri_option,self.pkt_size)# set CPRI configurations
         self.action = env.process(self.run())  # starts the run() method as a SimPy process
 
-    def CpriConfig(self, cpri_option):
+    def CpriConfig(self, cpri_option,pkt_size):
 
         self.cpri_option = cpri_option
-        print("{}:{} - my cpri is {}".format(self.env.now,self.id,self.cpri_option))
-        if self.cpri_option == 1:
-            self.eth_overhead = 0.00001562
-            self.number_of_burst_pkts = 18
-        elif self.cpri_option == 2:
-            self.eth_overhead = 0.00003004
-            self.number_of_burst_pkts = 35
-        elif self.cpri_option == 3:
-            self.eth_overhead = 0.00005887
-            self.number_of_burst_pkts = 70
-        elif self.cpri_option == 4:
-            self.eth_overhead = 0.00007329
-            self.number_of_burst_pkts = 87
-        elif self.cpri_option == 5:
-            self.eth_overhead = 0.00003004
-            self.number_of_burst_pkts = 139
-        elif self.cpri_option == 6:
-            self.eth_overhead = 0.00005887
-            self.number_of_burst_pkts = 173
-        elif self.cpri_option == 7:
-            self.eth_overhead = 0.00007329
-            self.number_of_burst_pkts = 277
-        elif self.cpri_option == 8:
-            self.eth_overhead = 0.00003004
-            self.number_of_burst_pkts = 286
-        elif self.cpri_option == 9:
-            self.eth_overhead = 0.00005887
-            self.number_of_burst_pkts = 343
-        elif self.cpri_option == 10:
-            self.eth_overhead = 0.00007329
-            self.number_of_burst_pkts = 685
-        else: #
-            self.eth_overhead = 0
-            self.number_of_burst_pkts = 1
-            self.pkt_size = 9422
+        #print("{}:{} - my cpri is {}".format(self.env.now,self.id,self.cpri_option))
+
+        # ETH PKTs CALCULATION
+        #BW= ((BW_bits * interval_pkt_sec) / 8) / eth_pktsize_byte
+        #print calc.splits_info[str(cpri_option)][1]['bw']
+        BW_mbps=calc.splits_info[str(cpri_option)][1]['bw']
+        BW_bits=calc.size_bits(BW_mbps)
+
+        #print BW_bits
+
+        n_pkts= ((BW_bits * self.interval) / 8) / self.pkt_size
+        #print "NUM PKTS: %f" % n_pkts
+
+        self.eth_overhead = 26.0/self.pkt_size
+        #print self.eth_overhead
+        self.number_of_burst_pkts = int(math.ceil(n_pkts))
+        #print self.number_of_burst_pkts
+        #print n_pkts
+        #print math.ceil(n_pkts)
 
     def run(self):
         """The generator function used in simulations.
@@ -96,7 +84,8 @@ class PacketGenerator(object):
             #npkt = (self.number_of_burst_pkts*4)/10
             for i in range(self.number_of_burst_pkts):
                 self.packets_sent += 1
-                p = Packet(self.env.now,self.pkt_size ,self.packets_sent, self.cpri_option, src=self.id)
+                p = Packet(self.env.now,self.pkt_size ,self.packets_sent, self.cpri_option,\
+                src=self.id,interval=self.interval,mtu=self.pkt_size)
                 p_list.append(p)
 			#Cpri over Ethernet overhead timeout
             #self.env.timeout(self.eth_overhead)

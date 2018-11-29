@@ -1,7 +1,8 @@
 import time
 import simpy
 import random
-
+import logging as log
+import simtime as l
 
 class ONU(object):
     def __init__(self,oid,env,monitoring,wavelengths,distance,odn,fog_odn=None,fog_distance=3):

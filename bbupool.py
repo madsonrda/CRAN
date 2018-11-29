@@ -1,10 +1,16 @@
 import simpy
 from bbu import BBU
+import logging as log
+import simtime as l
+#FORMAT = "%(asctime)-15s %(bla)f %(message)s"
+#log.basicConfig(format=FORMAT,filename='example.log',level=log.DEBUG) # filemode='w'
+
 
 class BBUPool(object):
 	def __init__(self,env,bbupoll_id,wavelength,split=7,odn=None,distance=0):
 	#def __init__(self,env,DC_type,bbupoll_id,OLT,odn=None):
  		self.env = env
+ 		self.d = {'bla': self.env.now}
  		#self.DC_type = DC_type # 1 = Fog node; 2 = DC local; 3 = DC central
 		self.wavelength = wavelength
  		self.bbupoll_id = bbupoll_id
@@ -35,5 +41,9 @@ class BBUPool(object):
 			pkt = yield self.post_proc_buffer.get()
 			if self.odn != None:
 				print "BBUPOOL %d: Send to ODN" % self.bbupoll_id
+				#log.debug("now: %f", self.env.now)
+				#log.debug("D: %f", self.d['time'])
+				#log.debug("BBUPOOL %d: Send to ODN", self.bbupoll_id, extra=l.stime(self.env))
+
 				msg = (self.bbupoll_id,pkt,self.wavelength)
 				self.odn.wavelengths[self.wavelength]['upstream'].put(msg)

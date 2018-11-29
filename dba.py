@@ -3,28 +3,31 @@ import simpy
 import random
 import math
 import sys
+import logging as log
+import simtime as l
 
 class DBA(object):
     """DBA Parent class, heritated by every kind of DBA"""
-    def __init__(self,env,monitoring,grant_store):
+    def __init__(self,env,monitoring,grant_store,bandwidth,delay_limit):
         self.env = env
         self.grant_store = grant_store
         self.guard_interval = 0.000001
         self.monitoring = monitoring
+        self.bandwidth = bandwidth
+        self.delay_limit = delay_limit
+        self.time_limit = self.delay_limit
+        self.lightspeed = float(200000)
 
 
 class Nakayama_DWBA(DBA):
     #problema: ultrapassa limite de delay se o tamanho do slot ou delay prop for grande
-    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs):
-        DBA.__init__(self,env,monitoring,grant_store)
+    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs,bandwidth=10000000000,delay_limit=0.000250):
+        DBA.__init__(self,env,monitoring,grant_store,bandwidth,delay_limit)
         self.ONUs = ONUs
-        self.delay_limit = 0.001250
         self.wavelengths = wavelengths
-        self.bandwidth = 10000000000
-        self.active_wavelenghts = []
-        self.time_limit = self.delay_limit
+        #self.bandwidth = 10000000000
+        self.active_wavelengths = []
         self.granting_start = 0
-        self.lightspeed = float(200000)
         self.num_slots = 0
         self.alloc_list = []
         self.counter = simpy.Resource(self.env, capacity=1)#create a queue of requests to DBA
@@ -48,6 +51,8 @@ class Nakayama_DWBA(DBA):
 
             max_alloc = max(self.alloc_list, key=lambda x : x['burst'])
             bits = (max_alloc['pkt'].size * max_alloc['burst']) * 8
+            #print("Bits={:.10f".format(bits))
+            print "Bits= %f" % bits
             slot_time = bits/float(self.bandwidth)
             print("slot_time={:.10f}".format(slot_time))
 
@@ -56,7 +61,7 @@ class Nakayama_DWBA(DBA):
                 print "NUM SLOTS leq 1"
             print("num_slots={}".format(self.num_slots))
             w = 0
-            self.active_wavelenghts.append(self.wavelengths[w])
+            self.active_wavelengths.append(self.wavelengths[w])
             slot = 1
             start = self.granting_start
             Gate = []
@@ -72,7 +77,7 @@ class Nakayama_DWBA(DBA):
                 if slot > self.num_slots:
                     w +=1
                     try:
-                        self.active_wavelenghts.append(self.wavelengths[w])
+                        self.active_wavelengths.append(self.wavelengths[w])
                         slot = 1
                         start = self.granting_start
                     except Exception as e:
@@ -81,7 +86,7 @@ class Nakayama_DWBA(DBA):
                         print self.env.now
                         sys.exit(0)
 
-            self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelenghts))
+            self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelengths))
             for gate in Gate:
                 self.grant_store.put(gate)
             self.alloc_list = []
@@ -98,21 +103,17 @@ class Nakayama_DWBA(DBA):
 
             if self.alloc_counter == len(self.ONUs):
                 self.alloc_counter = 0
-                self.active_wavelenghts = []
+                self.active_wavelengths = []
                 self.AllocGathering.succeed()
                 self.AllocGathering = self.env.event()
 
 class M_DWBA(DBA):
-    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs):
-        DBA.__init__(self,env,monitoring,grant_store)
+    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs,bandwidth=10000000000,delay_limit=1.001250):
+        DBA.__init__(self,env,monitoring,grant_store,bandwidth,delay_limit)
         self.ONUs = ONUs
-        self.delay_limit = 0.001250
         self.wavelengths = wavelengths
-        self.bandwidth = 10000000000
-        self.active_wavelenghts = []
-        self.time_limit = self.delay_limit
+        self.active_wavelengths = []
         self.granting_start = 0
-        self.lightspeed = float(200000)
         self.num_slots = 0
         self.alloc_list = []
         self.counter = simpy.Resource(self.env, capacity=1)#create a queue of requests to DBA
@@ -135,16 +136,20 @@ class M_DWBA(DBA):
             print("time_limit = {}".format(self.time_limit))
 
             #max_alloc = max(self.alloc_list, key=lambda x : x['burst'])
+            
+            print self.alloc_list[0]['pkt']
             bits = self.alloc_list[0]['pkt'].size  * 8
+            print "Bits= %f" % bits
             slot_time = bits/float(self.bandwidth)
             print("slot_time={:.10f}".format(slot_time))
 
             self.num_slots = math.floor((self.time_limit - self.granting_start)/float(slot_time))
             if self.num_slots < 1:
+                #print "Time limit - % (self.time_limit - self.granting_start)
                 print "NUM SLOTS leq 1"
             print("num_slots={}".format(self.num_slots))
             w = 0
-            self.active_wavelenghts.append(self.wavelengths[w])
+            self.active_wavelengths.append(self.wavelengths[w])
             slot = 1
             start = self.granting_start
             Gate = []
@@ -160,17 +165,22 @@ class M_DWBA(DBA):
                     if slot > self.num_slots:
                         w +=1
                         try:
-                            self.active_wavelenghts.append(self.wavelengths[w])
+                            self.active_wavelengths.append(self.wavelengths[w])
                             slot = 1
                             start = self.granting_start
                         except Exception as e:
+
+                            print "Exception"
+                            print "NUM_SLOTS: %d" % self.num_slots
+                            print "SLOT: %d" % slot
                             print w
+                            print self.wavelengths
                             print("ERROR {}".format(e))
-                            print self.env.now
+                            print "TIME: %f" % self.env.now
                             sys.exit(0)
                 Gate.append(gate)
 
-            self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelenghts))
+            self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelengths))
             for gate in Gate:
                 self.grant_store.put(gate)
             self.alloc_list = []
@@ -187,6 +197,6 @@ class M_DWBA(DBA):
 
             if self.alloc_counter == len(self.ONUs):
                 self.alloc_counter = 0
-                self.active_wavelenghts = []
+                self.active_wavelengths = []
                 self.AllocGathering.succeed()
                 self.AllocGathering = self.env.event()
