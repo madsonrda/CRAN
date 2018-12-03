@@ -14,14 +14,12 @@ class BBU(object):
 		self.proc_timeout = 1/1000.0 # 1ms of processing timeout
 		self.proc_buffer = simpy.Store(self.env)
 		
+		# ETH PKT BUFFER
 		self.pkt=None
 		self.buffer_bits=0
 		self.expected_bw=0
-		# PENSAR EM COMO FAZER O BUFFER DOS PACOTES ETHERNET
-		# self.eth_buffer = simpy.Store(self.env) 
-		#-> MELHOR FORMA E ARMAZENAR HEADER E IR SOMANDO OS PKT SIZES ATE BATER NO TAMANHO DO CPRI
-		# DPS GERA UM NOVO PKT CPRI QUE GERE OS ETHERNETS 
-		
+		#########
+
 		self.check_procbuffer = self.env.process(self.Check_ProcBuffer())
 
 		self.postProc_buffer = post_proc_buffer # post proc buffer da BBU POOL
@@ -33,15 +31,18 @@ class BBU(object):
 		while True:
 			pkt = yield self.proc_buffer.get()
 			if self.pkt == None:
+				print "STARTING BUFFER OF BBU %d" % self.bbu_id
 				self.pkt = pkt
 				self.buffer_bits+= pkt.mtu
-				self.expected_bw = calc.get_bits_cpri_split(pkt.cpri_option,pkt.split,pkt.interval)
+				self.expected_bw = calc.get_bytes_cpri_split(pkt.cpri_option,pkt.split,pkt.interval)
+				print "CPRI %d SPLIT %d INTERVAL %f EXPECTED BW == %f" % (pkt.cpri_option,pkt.split,pkt.interval,self.expected_bw)
 				#print "PKT SIZE %d incremented to "
 				self.env.process(self.Proc(pkt))
 				yield self.env.timeout(0)
 			else:
 				self.buffer_bits+=pkt.mtu
-				print "BBU %d: BUFFER BITS %f ; EXPECTED BW %f ; TIME: %f" % (self.bbu_id,self.buffer_bits,self.expected_bw, self.env.now)
+				print "BBU %d ; CELL %d ; BUFFER BITS %f ; CPRI %d ; EXPECTED BW %f ; TIME: %f" % \
+				(self.bbu_id,pkt.cell,self.buffer_bits,pkt.cpri_option,self.expected_bw, self.env.now)
 
 				if self.buffer_bits == self.expected_bw:
 					print "BUFFER BITS == EXPECTED BW AT BBU %d ! YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" % self.bbu_id
@@ -69,7 +70,7 @@ class BBU(object):
 			pkt.split = self.split
 			
 			table_size = calc.splits_info[str(pkt.cpri_option)][pkt.split]['bw']
-			pkt.size = calc.size_byte(table_size,pkt.interval)
+			pkt.cpri_size = calc.size_byte(table_size,pkt.interval)
 
 			# later add energy cost
 			# later add processed pkt to log file

@@ -42,7 +42,6 @@ env = simpy.Environment()
 
 #criar monitor
 monitoring = monitor(env,"teste")
-bbu_store = simpy.Store(env)
 
 #criar dc central
 dc_central_id = 0
@@ -50,6 +49,8 @@ dc_central = BBUPool(env,dc_central_id,250)
 
 #######
 #DC LOCAL 1
+
+cell1=1
 
 for i in range(3):
     dc_central.add_bbu(i)
@@ -63,7 +64,7 @@ link_midhaul1.activate_wavelength(wavelength1,dc_central_id)#wavelength e bbupol
 
 #criar dc local 1
 split1=3
-distance1 = 10
+distance1 = 1
 dc_local1 = BBUPool(env,1,wavelength1,split1,link_midhaul1,distance1)
 #dc_local1_cells = 30
 for i in range(3):
@@ -91,8 +92,9 @@ for i in range(3):
 #criar PacketGenerator
 pkt_gen1 = []
 for i in range(3):
-    pkt_gen1.append(PacketGenerator(env,i,ONUs1[i],bbu_store1,random.randint(1,3)))
-
+    #pkt_gen1.append(PacketGenerator(env,i,ONUs1[i],bbu_store1,random.randint(1,3)))
+    cpri1=1
+    pkt_gen1.append(PacketGenerator(env,i,ONUs1[i],bbu_store1,cell1,cpri1))
 #criar link entre a OLT e o BBU POOL
 link_dc_local1 = ODN(env,monitoring,"link_dc_local1")
 link_dc_local1.create_wavelength(150,1)#wavelength = 150
@@ -113,6 +115,8 @@ bbu1 = env.process(bbu_sched(olt1,bbu_store1))
 ################################
 #DC LOCAL 2
 
+cell2 = 2
+
 for i in range(3,6):
     dc_central.add_bbu(i)
 
@@ -123,7 +127,7 @@ link_midhaul2 = ODN(env,monitoring,"link_midhaul2")
 link_midhaul2.create_wavelength(wavelength2,dc_central_id)
 link_midhaul2.activate_wavelength(wavelength2,dc_central_id)#wavelength e bbupoll_id
 
-distance2 = 10
+distance2 = 1
 
 #criar dc local 1
 dc_local2 = BBUPool(env,2,wavelength2,split2,link_midhaul2,distance2)
@@ -153,7 +157,9 @@ for i in range(3,6):
 #criar PacketGenerator
 pkt_gen2 = []
 for i in range(3,6):
-	pkt_gen2.append(PacketGenerator(env,i,ONUs2[i],bbu_store2,random.randint(1,3)))
+    cpri1=1
+	#pkt_gen2.append(PacketGenerator(env,i,ONUs2[i],bbu_store2,random.randint(1,3)))
+    pkt_gen2.append(PacketGenerator(env,i,ONUs2[i],bbu_store2,cell2,cpri1))
 
 #criar link entre a OLT e o BBU POOL
 link_dc_local2 = ODN(env,monitoring,"link_dc_local2")
@@ -173,6 +179,10 @@ link_dc_local2.set_Aside_nodes({1:olt2})
 bbu2 = env.process(bbu_sched(olt2,bbu_store2))
 
 ###############################
+
+# 'TIDAL' EFFECT
+#tc(env,pkt_gen1,0.5)
+#tc(env,pkt_gen2,0.5)
 
 #start simulation
 env.run(until=2)

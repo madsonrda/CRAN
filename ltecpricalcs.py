@@ -502,7 +502,14 @@ for cpri in UL_splits:
 def get_bits_cpri_split(cpri_op,split_op,interval=1):
 	#coding=23
 	bw=UL_splits[str(cpri_op)][split_op]['bw'] * interval
-	return size_bits(bw)
+	return bw
+	#size_bits(bw)
+
+def get_bytes_cpri_split(cpri_op,split_op,interval=1):
+	#coding=23
+	bw=((UL_splits[str(cpri_op)][split_op]['bw'] * 1000 * 1000 ) * interval) / 8
+	return bw
+	#size_byte(bw)
 
 #def bits_cpri_split_interval
 

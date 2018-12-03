@@ -8,12 +8,13 @@ import math
 
 class Packet(object):
     """ This class represents a network packet """
-    def __init__(self, time, size,id, cpri_option,split=1,coding=23,src="a", dst="z", interval=0.004, mtu=1500):
+    def __init__(self, time, size,id, cpri_option,cell,split=1,coding=23,src="a", dst="z", interval=0.004, mtu=1500):
         self.time = time# creation time
         self.id = id # packet id
         self.src = src #packet source address
         self.dst = dst #packet destination address
-        self.size = size
+        self.cell = cell
+        self.size = mtu
         self.interval = interval
 
         #BRUNO
@@ -22,7 +23,7 @@ class Packet(object):
         self.cpri_option = cpri_option # Fixed packet size
         self.coding = coding #same as MCS
         size_mbps=(calc.UL_splits[str(self.cpri_option)][1]['bw']) * interval
-        self.size = calc.size_bits(size_mbps)
+        self.cpri_size = calc.size_bits(size_mbps)
         #print "SIZE PKT: %f" % self.size
         #self.prb = calc.CPRI[self.cpri_option]['PRB']
         #BRUNO
@@ -33,9 +34,10 @@ class Packet(object):
 
 class PacketGenerator(object):
     """This class represents the packet generation process """
-    def __init__(self, env, id, ONU, bbu_store ,cpri_option=1,interval=0.004, finish=float("inf")):
+    def __init__(self, env, id, ONU, bbu_store,cell,cpri_option=1,interval=0.004, finish=float("inf")):
         self.id = id # packet id
         self.ONU = ONU
+        self.cell = cell
         self.bbu_store = bbu_store
         self.env = env # Simpy Environment
         self.cpri_option = None # Fixed packet size
@@ -61,13 +63,15 @@ class PacketGenerator(object):
         BW_bits=calc.size_bits(BW_mbps)
 
         #print BW_bits
-
-        n_pkts= ((BW_bits * self.interval) / 8) / self.pkt_size
+        bw_bits=((BW_bits * self.interval) / 8)
+        n_pkts= int(bw_bits / self.pkt_size)
+        last_pkt_size= bw_bits % self.pkt_size
         #print "NUM PKTS: %f" % n_pkts
 
         self.eth_overhead = 26.0/self.pkt_size
         #print self.eth_overhead
         self.number_of_burst_pkts = int(math.ceil(n_pkts))
+        self.last_pkt_size=last_pkt_size
         #print self.number_of_burst_pkts
         #print n_pkts
         #print math.ceil(n_pkts)
@@ -85,8 +89,14 @@ class PacketGenerator(object):
             for i in range(self.number_of_burst_pkts):
                 self.packets_sent += 1
                 p = Packet(self.env.now,self.pkt_size ,self.packets_sent, self.cpri_option,\
-                src=self.id,interval=self.interval,mtu=self.pkt_size)
+                self.cell,src=self.id,interval=self.interval,mtu=self.pkt_size)
                 p_list.append(p)
+            if self.last_pkt_size>0:
+                p = Packet(self.env.now,self.last_pkt_size ,self.packets_sent, self.cpri_option,\
+                self.cell,src=self.id,interval=self.interval,mtu=self.pkt_size)
+                p_list.append(p)
+
+            self.number_of_burst_pkts+=1
 			#Cpri over Ethernet overhead timeout
             #self.env.timeout(self.eth_overhead)
             #alloc_signal{ONU,pkt,burst}
