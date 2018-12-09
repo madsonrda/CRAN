@@ -8,7 +8,7 @@ class ONU(object):
     def __init__(self,oid,env,monitoring,wavelengths,distance,odn,fog_odn=None,fog_distance=3):
         self.oid = oid
         self.monitoring = monitoring
-        self.bandwidth = 10000000000 #10Gbs
+        self.bandwidth = 25000000000 #25Gbs
         self.env = env
         self.distance = distance
         self.fog_distance = fog_distance

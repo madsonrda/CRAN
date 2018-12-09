@@ -26,11 +26,11 @@ HTHOLD = HTHOLD/100.0
 ##### SIMULATION FLAGS: #####
 
 #Disable logging by uncommenting below
-#log.disable(True)
+log.disable(True)
 
 #############################
 
-#pega sinalizacao pro grant do mdba 
+#pega sinalizacao pro grant do mdba
 def bbu_sched(olt,bbu_store):
     while True:
         alloc_signal = yield bbu_store.get()
