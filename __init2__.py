@@ -41,34 +41,34 @@ env = simpy.Environment()
 monitoring = monitor(env,"teste")
 
 #criar dc central
-dc_central_id = 0
-dc_central = BBUPool(env,dc_central_id,250)
+#dc_central_id = 0
+#dc_central = BBUPool(env,dc_central_id,250)
 
 #######
 #DC LOCAL 1
 
 cell1=1
 
-for i in range(3):
-    dc_central.add_bbu(i)
+#for i in range(3):
+#    dc_central.add_bbu(i)
 
 wavelength1 = 200
 
 #criar link entre a DC-LOCAL e o DC-CENTRAL
-link_midhaul1 = ODN(env,monitoring,"midhaul1")
-link_midhaul1.create_wavelength(wavelength1,dc_central_id)#wavelength = 200
-link_midhaul1.activate_wavelength(wavelength1,dc_central_id)#wavelength e bbupoll_id
+#link_midhaul1 = ODN(env,monitoring,"midhaul1")
+#link_midhaul1.create_wavelength(wavelength1,dc_central_id)#wavelength = 200
+#link_midhaul1.activate_wavelength(wavelength1,dc_central_id)#wavelength e bbupoll_id
 
 #criar dc local 1
 split1=3
 distance1 = 1
-dc_local1 = BBUPool(env,1,wavelength1,split1,link_midhaul1,distance1)
+dc_local1 = BBUPool(env,1,wavelength1,split1,distance1)
 #dc_local1_cells = 30
 for i in range(3):
     dc_local1.add_bbu(i)
 
-link_midhaul1.set_Bside_nodes({0:dc_central})
-link_midhaul1.set_Aside_nodes({1:dc_local1})
+#link_midhaul1.set_Bside_nodes({0:dc_central})
+#link_midhaul1.set_Aside_nodes({1:dc_local1})
 
 bbu_store1 = simpy.Store(env)
 
@@ -114,26 +114,26 @@ bbu1 = env.process(bbu_sched(olt1,bbu_store1))
 
 cell2 = 2
 
-for i in range(3,6):
-    dc_central.add_bbu(i)
+#for i in range(3,6):
+#    dc_central.add_bbu(i)
 
 split2=1
 wavelength2=201
 #criar link entre a DC-LOCAL e o DC-CENTRAL
-link_midhaul2 = ODN(env,monitoring,"link_midhaul2")
-link_midhaul2.create_wavelength(wavelength2,dc_central_id)
-link_midhaul2.activate_wavelength(wavelength2,dc_central_id)#wavelength e bbupoll_id
+#link_midhaul2 = ODN(env,monitoring,"link_midhaul2")
+#link_midhaul2.create_wavelength(wavelength2,dc_central_id)
+#link_midhaul2.activate_wavelength(wavelength2,dc_central_id)#wavelength e bbupoll_id
 
 distance2 = 1
 
 #criar dc local 1
-dc_local2 = BBUPool(env,2,wavelength2,split2,link_midhaul2,distance2)
+dc_local2 = BBUPool(env,2,wavelength2,split2,distance2)
 #dc_local1_cells = 30
 for i in range(3,6):
     dc_local2.add_bbu(i)
 
-link_midhaul2.set_Bside_nodes({0:dc_central})
-link_midhaul2.set_Aside_nodes({2:dc_local2})
+#link_midhaul2.set_Bside_nodes({0:dc_central})
+#link_midhaul2.set_Aside_nodes({2:dc_local2})
 
 bbu_store2 = simpy.Store(env)
 

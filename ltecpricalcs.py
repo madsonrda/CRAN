@@ -459,9 +459,13 @@ for cpri_option in ordered:
 			bw_total=bw_total + bw_axc
 
 		UL_splits[cpri_option][split]['bw'] = bw_total
+		#banda=(bw_total * 0.004) / 8 * 1000 * 1000
+		#print "BW in BYTES  CPRI %s SPLIT %d IN 4ms: %f" % (cpri_option,split, banda)
 		#print "CPRI_option: %s ; Split%d BW: %.3f Mbps ; DICT: %f" % (cpri_option,split,bw_total, UL_splits[cpri_option][split]['bw'])
 		#print UL_splits[coding][cpri_option][split]['bw']
-		
+
+
+
 
 splits_info=UL_splits
 
@@ -523,3 +527,24 @@ def size_byte(pkt_size,interval):
 	"""
 	final_size = ((pkt_size / 8) * 1000 * 1000) * interval
 	return final_size
+
+
+
+def num_eth_pkts(cpri_option,split,interval,pkt_size):
+        #BW= ((BW_bits * interval_pkt_sec) / 8) / eth_pktsize_byte
+
+        BW_mbps=splits_info[str(cpri_option)][split]['bw']
+        BW_bits=size_bits(BW_mbps)
+
+        bw_bits=((BW_bits * interval) / 8)
+        n_pkts= int(bw_bits / pkt_size)
+        last_pkt_size= bw_bits % pkt_size
+        
+        if last_pkt_size == 0:
+        	last_pkt_size= pkt_size
+        
+        num_eth_pkts = int(math.ceil(n_pkts))
+        
+        #print "NUM PKTS: %f" % n_pkts
+        
+        return num_eth_pkts
