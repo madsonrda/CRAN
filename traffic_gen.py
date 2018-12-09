@@ -58,22 +58,22 @@ class PacketGenerator(object):
 
         # ETH PKTs CALCULATION
         #BW= ((BW_bits * interval_pkt_sec) / 8) / eth_pktsize_byte
-        #print calc.splits_info[str(cpri_option)][1]['bw']
-        BW_mbps=calc.splits_info[str(cpri_option)][1]['bw']
-        BW_bits=calc.size_bits(BW_mbps)
+        MTU_size = pkt_size
+        split=1
+        bw_bytes = calc.get_bytes_cpri_split(cpri_option,split,self.interval)
 
-        #print BW_bits
-        bw_bits=((BW_bits * self.interval) / 8)
-        n_pkts= int(bw_bits / self.pkt_size)
-        last_pkt_size= bw_bits % self.pkt_size
-        #print "NUM PKTS: %f" % n_pkts
+        n_pkts = calc.num_eth_pkts(cpri_option,split,self.interval,MTU_size)
+        
+        last_pkt_size= bw_bytes % MTU_size
+        if last_pkt_size == 0:
+            last_pkt_size = MTU_size
 
-        self.eth_overhead = 26.0/self.pkt_size
-        #print self.eth_overhead
+        self.eth_overhead = 26.0/pkt_size
         self.number_of_burst_pkts = int(math.ceil(n_pkts))
         self.last_pkt_size=last_pkt_size
+
         #print self.number_of_burst_pkts
-        #print n_pkts
+        #print bw_bytes
         #print math.ceil(n_pkts)
 
     def run(self):
@@ -96,7 +96,6 @@ class PacketGenerator(object):
                 self.cell,src=self.id,interval=self.interval,mtu=self.pkt_size)
                 p_list.append(p)
 
-            self.number_of_burst_pkts+=1
 			#Cpri over Ethernet overhead timeout
             #self.env.timeout(self.eth_overhead)
             #alloc_signal{ONU,pkt,burst}

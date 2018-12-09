@@ -5,7 +5,7 @@ import simtime as l
 
 
 class BBUPool(object):
-	def __init__(self,env,bbupoll_id,wavelength,split=7,odn=None,distance=0):
+	def __init__(self,env,bbupoll_id,wavelength,split=7,distance=0,odn=None):
 	#def __init__(self,env,DC_type,bbupoll_id,OLT,odn=None):
  		self.env = env
  		self.d = {'bla': self.env.now}

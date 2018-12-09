@@ -7,7 +7,8 @@ import argparse as arg
 ######
 
 parser = arg.ArgumentParser(description="Function Splitting - RAN Simulator")
-parser.add_argument("T", type=str, default='Hybrid',choices=["CRAN","DRAN","Hybrid"], help="Topology")
+#parser.add_argument("-T", type=str, default='Hybrid',choices=["CRAN","DRAN","Hybrid"], help="Topology")
+parser.add_argument("-T", "--type", type=str, default='Hybrid', help="Choose simulation type, between CRAN,DRAN and Hybrid (default).")
 parser.add_argument("-D", "--duration", type=int, default=2, help="Duration of simulation, in seconds.")
 parser.add_argument("-S", "--seed", type=int, default=50, help="Random number generator seed number.")
 parser.add_argument("-C", "--cells", type=int, default=2, help="Cell clusters number.")
@@ -22,7 +23,7 @@ parser.add_argument("-I", "--interval", type=int, default=2.001, help="Interval 
 args = parser.parse_args()
 
 #Arguments
-TOPOLOGY = args.T
+TOPOLOGY = args.type
 DURATION = args.duration
 SEED = args.seed
 N_CELLS = args.cells
