@@ -47,19 +47,19 @@ class BBU(object):
 
 				self.expected_pkts = calc.num_eth_pkts(pkt.cpri_option,pkt.split,pkt.interval,pkt.size)
 
-				print "CPRI %d SPLIT %d INTERVAL %f EXPECTED PKTs == %d" % (pkt.cpri_option,pkt.split,pkt.interval,self.expected_pkts)
+				#print "CPRI %d SPLIT %d INTERVAL %f EXPECTED PKTs == %d" % (pkt.cpri_option,pkt.split,pkt.interval,self.expected_pkts)
 
 				yield self.env.timeout(0)
 			else:
 				self.buffer_pkts+=1
 				self.buffer_bytes+=pkt.size
-				print "BBU %d ; CELL %d ; BUFFER BITS %f ; CPRI %d ; EXPECTED PKTs %d ; TIME: %f" % \
+				#print "BBU %d ; CELL %d ; BUFFER BITS %f ; CPRI %d ; EXPECTED PKTs %d ; TIME: %f" % \
 				(self.bbu_id,pkt.cell,self.buffer_pkts,pkt.cpri_option,self.expected_pkts, self.env.now)
 
 				if self.buffer_pkts == self.expected_pkts:
-					print "BUFFER PKTs == EXPECTED PKTs AT BBU %d ! YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" % self.bbu_id
-					print "BUFFER_pkts: %d BUFFER_size: %f EXPECTED_bytes: %f ; BW CPRI %d SPLIT %d: %d" \
-					% (self.buffer_pkts,self.buffer_bytes,self.expected_bw,pkt.cpri_option,pkt.split, self.expected_pkts)
+					#print "BUFFER PKTs == EXPECTED PKTs AT BBU %d ! YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" % self.bbu_id
+					#print "BUFFER_pkts: %d BUFFER_size: %f EXPECTED_bytes: %f ; BW CPRI %d SPLIT %d: %d" \
+					#% (self.buffer_pkts,self.buffer_bytes,self.expected_bw,pkt.cpri_option,pkt.split, self.expected_pkts)
 
 					self.buffer_pkts = 0
 					yield self.env.process(self.Proc(pkt))
@@ -67,9 +67,9 @@ class BBU(object):
 					self.pkt=None
 
 				elif self.buffer_pkts > self.expected_pkts:
-					print "WTF BUFFER NA BBU DEU MAIOR DO QUE O SPLIT TEM ALGO ERRADO!"
-					print "BUFFER_pkts: %d ; BW CPRI %d SPLIT %d: %f" \
-					% (self.buffer_pkts,pkt.cpri_option,pkt.split, self.expected_pkts)
+					#print "WTF BUFFER NA BBU DEU MAIOR DO QUE O SPLIT TEM ALGO ERRADO!"
+					#print "BUFFER_pkts: %d ; BW CPRI %d SPLIT %d: %f" \
+					#% (self.buffer_pkts,pkt.cpri_option,pkt.split, self.expected_pkts)
 					#print "Seguindo adiante ainda sim... PKT SIZE == EXPECTED BW OF CPRI OPTION "
 
 					self.buffer_pkts = 0
@@ -85,6 +85,7 @@ class BBU(object):
 		##print "PKT sendo processado"
 		if self.bbupoll_id == 0:
 			#print "Pacote %d chegou no DC CENTRAL! SRC-ID:%d ;CPRI-option:%d ;Size:%d ;Split:%d " % (pkt.id,pkt.src,pkt.cpri_option,pkt.size,pkt.split)
+			pass
 		if pkt.split != self.split:
 			#print "SPLITOU DE %d para %d - Pacote %d de SRC-ID:%d na BBU-ID: %d" % (pkt.split,self.split,pkt.id,pkt.src,self.bbu_id)
 			pkt.split = self.split

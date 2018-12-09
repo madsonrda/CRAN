@@ -5,6 +5,9 @@ import math
 import sys
 import logging as log
 import simtime as l
+from sklearn import linear_model
+import pandas as pd
+import numpy as np
 
 class DBA(object):
     """DBA Parent class, heritated by every kind of DBA"""
@@ -219,9 +222,10 @@ class slot_table(object):
         self.slotn = 0
         self.slote = 0
         self.next_time = 0
-        self.construct(self.table_g,self.g_slots,self.start_g)
-        self.construct(self.table_n,self.n_slots,self.start_n)
-        self.construct(self.table_e,self.e_slots,self.next_time)
+        self.table_g =self.construct(self.table_g,self.g_slots,self.start_g)
+        self.table_n = self.construct(self.table_n,self.n_slots,self.start_n)
+        self.table_e = self.construct(self.table_e,self.e_slots,self.next_time)
+
 
     def construct(self,table,num_slots,start):
 
@@ -235,6 +239,7 @@ class slot_table(object):
             for j in range(num_slots):
                 table[i][j] = {"onu": None, "start": self.next_time, "end": self.next_time + self.slot_time}
                 self.next_time = self.next_time + self.slot_time
+        return table
 
     def update_w(self):
         self.w +1
@@ -282,8 +287,9 @@ class slot_table(object):
         #     sys.exit(0)
         if self.slotn == self.n_slots:
             return {}
-        #print self.table[self.w][self.slot]
+
         self.table_n[self.w][self.slotn]["onu"] = onu
+
         slot = self.slotn
         self.slotn += 1
         return {'start': self.table_n[self.w][slot]["start"],
@@ -322,7 +328,7 @@ class slot_table(object):
 
 
 class PM_DWBA(M_DWBA):
-    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs,bandwidth=25000000000,delay_limit=1.001250,distance=20):
+    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs,bandwidth=25000000000,delay_limit=0.001250,distance=20):
         DBA.__init__(self,env,monitoring,grant_store,bandwidth,delay_limit)
         self.ONUs = ONUs
         self.distance= distance
@@ -349,7 +355,7 @@ class PM_DWBA(M_DWBA):
         for i in range(len(self.ONUs)):
         #     # training unit
             self.grant_history[i] = {'cycle': [],  'slots': []}
-            self.GATE[i] = {'name': 'gate', 'onu': i, 'wavelength': self.wavelengths[0], 'grant': []}
+            self.GATE[i] = {'name': 'gate', 'id': i, 'wavelength': self.wavelengths[0], 'grant': []}
         self.slot_time = self.calc_slot_time()
         self.normal_slots = int(math.floor((self.time_limit - 2*self.propagation_delay)/float(self.slot_time)))
         if self.normal_slots < 1:
@@ -395,8 +401,8 @@ class PM_DWBA(M_DWBA):
     def check_pred(self,alloc_list):
         pq = {}
         q = []
-        if len( self.alloc_list) > 0:
-            for alloc in self.alloc_list:
+        if len( alloc_list) > 0:
+            for alloc in alloc_list:
                 self.monitoring.required_slots(self.cycle,alloc['burst'],alloc['onu'].oid)
                 self.grant_history[alloc['onu'].oid]['cycle'].append(self.cycle)
                 self.grant_history[alloc['onu'].oid]['slots'].append(alloc['burst'])
@@ -407,7 +413,8 @@ class PM_DWBA(M_DWBA):
                         self.predictions_list[alloc['onu'].oid] += pred
                         print("{} - onu {} preds {}".format(self.env.now,alloc['onu'].oid,self.predictions_list))
                         for i,p in enumerate(pred):
-                            if not ( self.cycle +( i+1) in pq1.keys() ):
+                            print pq.keys()
+                            if not ( self.cycle +( i+1) in pq.keys() ):
                                 pq[self.cycle +( i+1)] = []
                             for burst in range(p):
                                 pq[self.cycle +( i+1)].append(alloc['onu'].oid)
@@ -432,7 +439,34 @@ class PM_DWBA(M_DWBA):
                         self.predictions_list[alloc['onu'].oid].pop(0)
         return pq,q
 
-
+    def pred_allocation(self,pq):
+        if len(pq) > 0:
+            ciclos = sorted(pq.keys())
+            for c in ciclos:
+                for onu in pq[c]:
+                    if not ( c in self.cycle_tables.keys() ):
+                        print("ciclo atual {}".format(self.cycle))
+                        print("{} - create cycle {} table by pred, onu {}".format(self.env.now,c,onu))
+                        c_start = self.cycle_tables[c-1].start_g + self.cycle_interval
+                        self.cycle_tables[c] = slot_table(self.normal_slots,
+                            self.grant_slots,self.higher_delay_slots,c_start,
+                            c_start + (self.distance/self.lightspeed), self.slot_time,self.wavelengths)
+                    if self.cycle_tables[c].check_avail_g():
+                        grant = self.cycle_tables[c].allocate_g(onu)
+                        if len(grant) > 0:
+                            self.GATE[onu]['grant'].append( grant )
+                            continue
+                        else:
+                            print("DEU MERDA AQUI")
+                            continue
+                    if self.cycle_tables[c].check_avail_n():
+                        grant = self.cycle_tables[c].allocate_n(onu)
+                        if len(grant) > 0:
+                            self.GATE[onu][grant].append( grant )
+                            continue
+                        else:
+                            print("DEU MERDA CARALHO AQUI")
+                            continue
 
     def dwba(self):
         while True:
@@ -449,9 +483,12 @@ class PM_DWBA(M_DWBA):
             pq2,q2 = self.check_pred(self.alloc_list2)
             pq3,q3 = self.check_pred(self.alloc_list3)
             pq4,q4 = self.check_pred(self.alloc_list4)
+            print("fim check pred no ciclo {}".format(self.cycle))
 
-            Gate = []
+
             queues = [q1,q2,q3,q4]
+            #print queues
+            #print len(q1)
             i = 0
             while self.cycle_tables[self.cycle].check_avail_n() and i < len(queues):
                 if len(queues[i]) > 0:
@@ -459,14 +496,14 @@ class PM_DWBA(M_DWBA):
                     if len(grant) > 0:
                         self.GATE[queues[i][0]]['grant'].append( grant )
                         queues[i].pop(0)
+
                     else:
                         break
 
                 else:
-                    i=+1
-
-            i = 0
-            while self.cycle_tables[self.cycle].check_avail_e() and i < len(queues):
+                    i+=1
+            #print self.GATE
+            while self.cycle_tables[self.cycle].check_avail_e():
                 if len(q4) > 0:
                     grant = self.cycle_tables[self.cycle].allocate_n(q4[0])
                     if len(grant) > 0:
@@ -476,39 +513,17 @@ class PM_DWBA(M_DWBA):
                         break
 
                 else:
-                    i=+1
+                    break
 
-            pq = pq1+pq2+pq3
-            if len(pq) > 0:
-                for c in pq:
-                    for onu in pq[c]:
-                        if not ( c in self.cycle_tables.keys() )
-                            print("{} - create cycle {} table by pred, onu {}".format(self.env.now,self.cycle +( i+1),onu))
-                            c_start = self.cycle_tables[c-1] + self.cycle_interval
-                            self.cycle_tables[c] = slot_table(self.normal_slots,
-                                self.grant_slots,self.higher_delay_slots,c_start,
-                                c_start + (self.distance/self.lightspeed), self.slot_time,self.wavelengths)
-                        if self.cycle_tables[c].check_avail_g():
-                            grant = self.cycle_tables[c].allocate_g(onu)
-                            if len(grant) > 0:
-                                self.GATE[onu]['grant'].append( grant )
-                                continue
-                            else:
-                                print("DEU MERDA AQUI")
-                                continue
-                        if self.cycle_tables[c].check_avail_n():
-                            grant = self.cycle_tables[c].allocate_n(onu)
-                            if len(grant) > 0:
-                                self.GATE[onu][grant].append( grant )
-                                continue
-                            else:
-                                print("DEU MERDA CARALHO AQUI")
-                                continue
+            self.pred_allocation(pq1)
+            self.pred_allocation(pq2)
+            self.pred_allocation(pq3)
+
 
             if len(pq4) > 0:
                 for c in pq4:
                     for onu in pq4[c]:
-                        if not ( c in self.cycle_tables.keys() )
+                        if not ( c in self.cycle_tables.keys() ):
                             print("{} - create cycle {} table by pred, onu {}".format(self.env.now,self.cycle +( i+1),onu))
                             c_start = self.cycle_tables[c-1] + self.cycle_interval
                             self.cycle_tables[c] = slot_table(self.normal_slots,
@@ -533,7 +548,7 @@ class PM_DWBA(M_DWBA):
             for w in range(self.cycle_tables[self.cycle].w):
                 self.active_wavelenghts.append(self.wavelengths[w])
 
-            self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelenghts))
+            self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelengths))
             for i,gate in enumerate(self.GATE):
                 self.grant_store.put(gate)
                 self.GATE[i]['grant']=[]
