@@ -2,8 +2,6 @@ import simpy
 from bbu import BBU
 import logging as log
 import simtime as l
-#FORMAT = "%(asctime)-15s %(bla)f %(message)s"
-#log.basicConfig(format=FORMAT,filename='example.log',level=log.DEBUG) # filemode='w'
 
 
 class BBUPool(object):

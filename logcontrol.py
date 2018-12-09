@@ -5,12 +5,9 @@ import time
 
 print "TOPOLOGY == %s" % TOPOLOGY
 
-time_sim = {'time': 0}
-FORMAT = "%(levelname)s: %(asctime)s at SIMTIME:%(time)f = %(message)s"
+log.basicConfig(filename='example.log',level=log.DEBUG) # filemode='w'
 
-log.basicConfig(format=FORMAT,filename='example.log',level=log.DEBUG) # filemode='w'
-
-log.debug("STARTING LOG", extra=time_sim)
+log.debug("STARTING LOG")
 
 #logging.basicConfig(filename='func-sim.log',level=logging.DEBUG,format='%(asctime)s %(message)s')
 

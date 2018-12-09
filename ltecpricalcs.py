@@ -8,14 +8,12 @@ from logcontrol import *
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 #time_sim = {0: 0}
-time_sim = {'time': 0}
-FORMAT = "%(levelname)s: %(asctime)s at SIMTIME:%(time)f = %(message)s"
 
-log.basicConfig(format=FORMAT,filename='example.log',level=log.DEBUG) # filemode='w'
+log.basicConfig(filename='example.log',level=log.DEBUG) # filemode='w'
 #FORMAT = "%(levelname)s: %(asctime)s at SIMTIME:%(time)f = %(message)s"
 
 #log.basicConfig(format=FORMAT,filename='example.log',level=log.DEBUG) # filemode='w'
-log.debug("STARTING LTE & CPRI CALCULATIONS", extra=time_sim)
+log.debug("STARTING LTE & CPRI CALCULATIONS")
 
 """
 UPLINK LTE and CPRI calculations
@@ -467,7 +465,7 @@ for cpri_option in ordered:
 
 splits_info=UL_splits
 
-log.debug("FINISHING LTE and CPRI CALCULATIONS - RIGHT BEFORE SIMULATION BEGIN", extra=time_sim)
+log.debug("FINISHING LTE and CPRI CALCULATIONS - RIGHT BEFORE SIMULATION BEGIN")
 
 
 for cpri in UL_splits:
