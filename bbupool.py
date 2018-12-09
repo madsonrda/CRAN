@@ -38,7 +38,7 @@ class BBUPool(object):
 		while True:
 			pkt = yield self.post_proc_buffer.get()
 			if self.odn != None:
-				print "BBUPOOL %d: Send to ODN" % self.bbupoll_id
+				#print "BBUPOOL %d: Send to ODN" % self.bbupoll_id
 				#log.debug("now: %f", self.env.now)
 				#log.debug("D: %f", self.d['time'])
 				#log.debug("BBUPOOL %d: Send to ODN", self.bbupoll_id, extra=l.stime(self.env))

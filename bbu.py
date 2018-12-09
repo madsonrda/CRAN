@@ -13,7 +13,7 @@ class BBU(object):
 		self.split = split
 		self.proc_timeout = 1/1000.0 # 1ms of processing timeout
 		self.proc_buffer = simpy.Store(self.env)
-		
+
 		# ETH PKT BUFFER
 		self.pkt=None
 		self.buffer_bits=0
@@ -31,44 +31,44 @@ class BBU(object):
 		while True:
 			pkt = yield self.proc_buffer.get()
 			if self.pkt == None:
-				print "STARTING BUFFER OF BBU %d" % self.bbu_id
+				#print "STARTING BUFFER OF BBU %d" % self.bbu_id
 				self.pkt = pkt
 				self.buffer_bits+= pkt.mtu
 				self.expected_bw = calc.get_bytes_cpri_split(pkt.cpri_option,pkt.split,pkt.interval)
-				print "CPRI %d SPLIT %d INTERVAL %f EXPECTED BW == %f" % (pkt.cpri_option,pkt.split,pkt.interval,self.expected_bw)
-				#print "PKT SIZE %d incremented to "
+				#print "CPRI %d SPLIT %d INTERVAL %f EXPECTED BW == %f" % (pkt.cpri_option,pkt.split,pkt.interval,self.expected_bw)
+				##print "PKT SIZE %d incremented to "
 				self.env.process(self.Proc(pkt))
 				yield self.env.timeout(0)
 			else:
 				self.buffer_bits+=pkt.mtu
-				print "BBU %d ; CELL %d ; BUFFER BITS %f ; CPRI %d ; EXPECTED BW %f ; TIME: %f" % \
+				#print "BBU %d ; CELL %d ; BUFFER BITS %f ; CPRI %d ; EXPECTED BW %f ; TIME: %f" % \
 				(self.bbu_id,pkt.cell,self.buffer_bits,pkt.cpri_option,self.expected_bw, self.env.now)
 
 				if self.buffer_bits == self.expected_bw:
-					print "BUFFER BITS == EXPECTED BW AT BBU %d ! YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" % self.bbu_id
+					#print "BUFFER BITS == EXPECTED BW AT BBU %d ! YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" % self.bbu_id
 
 					self.buffer_bits = 0
 					self.pkt=None
 					yield self.env.process(self.Proc(pkt))
-				
+
 				elif self.buffer_bits > self.expected_bw:
-					print "WTF BUFFER NA BBU DEU MAIOR DO QUE O SPLIT TEM ALGO ERRADO!"
-					print "BUFFER_bits: %f ; BW CPRI %d SPLIT %d: %f" \
+					#print "WTF BUFFER NA BBU DEU MAIOR DO QUE O SPLIT TEM ALGO ERRADO!"
+					#print "BUFFER_bits: %f ; BW CPRI %d SPLIT %d: %f" \
 					% (self.buffer_bits,pkt.cpri_option,pkt.split, self.expected_bw)
-					print "Seguindo adiante ainda sim... PKT SIZE == EXPECTED BW OF CPRI OPTION "
+					#print "Seguindo adiante ainda sim... PKT SIZE == EXPECTED BW OF CPRI OPTION "
 
 					self.buffer_bits = 0
 					self.pkt=None
 					yield self.env.process(self.Proc(pkt))
-					
+
 	def Proc(self,pkt):
-		#print "PKT sendo processado"
+		##print "PKT sendo processado"
 		if self.bbupoll_id == 0:
-			print "Pacote %d chegou no DC CENTRAL! SRC-ID:%d ;CPRI-option:%d ;Size:%d ;Split:%d " % (pkt.id,pkt.src,pkt.cpri_option,pkt.size,pkt.split)
+			#print "Pacote %d chegou no DC CENTRAL! SRC-ID:%d ;CPRI-option:%d ;Size:%d ;Split:%d " % (pkt.id,pkt.src,pkt.cpri_option,pkt.size,pkt.split)
 		if pkt.split != self.split:
-			print "SPLITOU DE %d para %d - Pacote %d de SRC-ID:%d na BBU-ID: %d" % (pkt.split,self.split,pkt.id,pkt.src,self.bbu_id)
+			#print "SPLITOU DE %d para %d - Pacote %d de SRC-ID:%d na BBU-ID: %d" % (pkt.split,self.split,pkt.id,pkt.src,self.bbu_id)
 			pkt.split = self.split
-			
+
 			table_size = calc.splits_info[str(pkt.cpri_option)][pkt.split]['bw']
 			pkt.cpri_size = calc.size_byte(table_size,pkt.interval)
 

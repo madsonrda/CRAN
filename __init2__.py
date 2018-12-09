@@ -100,7 +100,7 @@ link_dc_local1.set_Bside_nodes({1:dc_local1})
 
 #criar OLT
 #dba = {'name':"Nakayama_DWBA"}
-dba1 = {'name':"M_DWBA"}
+dba1 = {'name':"PM_DWBA"}
 olt1 = OLT(env,monitoring,0,fronthaul1,ONUs1,wavelengths1,dba1,link_dc_local1,150)
 fronthaul1.set_Aside_nodes(ONUs1)
 fronthaul1.set_Bside_nodes({0:olt1})
@@ -182,4 +182,4 @@ bbu2 = env.process(bbu_sched(olt2,bbu_store2))
 #tc(env,pkt_gen2,0.5)
 
 #start simulation
-env.run(until=2)
+env.run(until=0.5)
