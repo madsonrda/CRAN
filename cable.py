@@ -75,7 +75,7 @@ class ODN(object):
             Aside_node,pkt,wavelength = yield self.wavelengths[wavelength]['upstream'].get()
 
             #print("{} - up at {}".format(Aside_node,self.env.now))
-
+            self.monitoring.pkt_sent(pkt.size,wavelength)
             self.monitoring.set_UL_bw(pkt.src,wavelength,pkt.size,self.env.now)
             self.env.process( self.splitter_up(Aside_node,wavelength,pkt))
 
