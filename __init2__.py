@@ -12,10 +12,7 @@ from bbupool import BBUPool
 from traffic_gen import PacketGenerator, Packet
 from monitor import monitor
 
-bla = {'time': 0}
-FORMAT = "%(levelname)s: %(asctime)s at SIMTIME:%(time)f = %(message)s"
-
-log.basicConfig(format=FORMAT,filename='example.log',level=log.DEBUG) # filemode='w'
+log.basicConfig(filename='example.log',level=log.DEBUG) # filemode='w'
 
 DURATION = DURATION * 1000 # transforming second to ms
 BWMID = BWMID * 1000 # transforming GB to MB
