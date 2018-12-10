@@ -16,7 +16,10 @@ class Packet(object):
         self.cell = cell
         self.size = size
         self.interval = interval
-        self.qos = qos
+        if id % 2 == 0:
+            self.qos = 1
+        else:
+            self.qos = 4
 
         #BRUNO
         self.mtu = mtu
@@ -102,13 +105,13 @@ class PacketGenerator(object):
             #self.env.timeout(self.eth_overhead)
             #alloc_signal{ONU,pkt,burst}
             if self.last_pkt_size > 0:
-                #print "NUMBER OF BURST PACKETS ANTES DO ALLOC ########################################"
+                print "NUMBER OF BURST PACKETS ANTES DO ALLOC ########################################"
                 burst_with_extra_pkt=self.number_of_burst_pkts + 1
-                #print "BURST: %d\n" % burst_with_extra_pkt
+                print "BURST: %d\n" % burst_with_extra_pkt
                 alloc_signal = {'onu':self.ONU,'burst':burst_with_extra_pkt,'pkt':p_list[0]}
             else:
-                #print "NUMBER OF BURST PACKETS ANTES DO ALLOC ########################################"
-                #print "BURST: %d\n" % self.number_of_burst_pkts
+                print "NUMBER OF BURST PACKETS ANTES DO ALLOC ########################################"
+                print "BURST: %d\n" % self.number_of_burst_pkts
                 alloc_signal = {'onu':self.ONU,'burst':self.number_of_burst_pkts,'pkt':p_list[0]}
             
             self.bbu_store.put(alloc_signal)

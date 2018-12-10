@@ -53,6 +53,7 @@ class OLT(object):
     def OLT_ULDataReceiver(self):
         while True:
             msg = yield self.ULInput.get()
+            #print msg
             self.monitoring.fronthaul_delay(msg.time)
             msg = (self.olt_number,msg,self.output_wavelength)
             self.output.wavelengths[self.output_wavelength]['upstream'].put(msg)

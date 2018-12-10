@@ -67,6 +67,7 @@ dc_local1 = BBUPool(env,1,wavelength1,split1,distance1)
 
 
 #dc_local1_cells = 30
+
 for i in range(N_RRHS):
     dc_local1.add_bbu(i)
 
@@ -91,8 +92,10 @@ for i in range(N_RRHS):
 
 #criar PacketGenerator
 pkt_gen1 = []
+
 for i in range(N_RRHS):
     #pkt_gen1.append(PacketGenerator(env,i,ONUs1[i],bbu_store1,random.randint(1,N_RRHS)))
+
     cpri1=1
     pkt_gen1.append(PacketGenerator(env,i,ONUs1[i],bbu_store1,cell1,cpri1))
 #criar link entre a OLT e o BBU POOL
@@ -103,7 +106,7 @@ link_dc_local1.set_Bside_nodes({1:dc_local1})
 
 #criar OLT
 #dba = {'name':"Nakayama_DWBA"}
-dba1 = {'name':"M_DWBA"}
+dba1 = {'name':"PM_DWBA"}
 olt1 = OLT(env,monitoring,0,fronthaul1,ONUs1,wavelengths1,dba1,link_dc_local1,150)
 fronthaul1.set_Aside_nodes(ONUs1)
 fronthaul1.set_Bside_nodes({0:olt1})
@@ -114,11 +117,12 @@ bbu1 = env.process(bbu_sched(olt1,bbu_store1))
 
 # init split algorithm
 #splitter1= Splitter(env)
-#splitter1.init_bbu_dict(cell1, edge_BBUs_obj_list , dc_BBUs_obj_list, split1)
+#splitter1.init_bbu_dict(cell1, edge_BBUs_obj_list , dc_BBUs_obj_list, split)
+
 
 # 'TIDAL' EFFECT
 #tc(env,pkt_gen1,0.5)
 #tc(env,pkt_gen2,0.5)
 
 #start simulation
-env.run(until=DURATION)
+env.run(until=0.5)
