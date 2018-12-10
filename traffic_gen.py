@@ -64,7 +64,7 @@ class PacketGenerator(object):
         bw_bytes = calc.get_bytes_cpri_split(cpri_option,split,self.interval)
 
         n_pkts = calc.num_eth_pkts(cpri_option,split,self.interval,MTU_size)
-        
+
         last_pkt_size= bw_bytes % MTU_size
         if last_pkt_size == 0:
             last_pkt_size = MTU_size
@@ -96,6 +96,7 @@ class PacketGenerator(object):
                 p = Packet(self.env.now,self.last_pkt_size ,self.packets_sent, self.cpri_option,\
                 self.cell,src=self.id,interval=self.interval,mtu=self.pkt_size)
                 p_list.append(p)
+                self.number_of_burst_pkts +=1
 
 			#Cpri over Ethernet overhead timeout
             #self.env.timeout(self.eth_overhead)
