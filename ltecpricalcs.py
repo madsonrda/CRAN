@@ -543,8 +543,9 @@ def num_eth_pkts(cpri_option,split,interval,pkt_size):
         if last_pkt_size == 0:
         	last_pkt_size= pkt_size
         
-        num_eth_pkts = int(math.ceil(n_pkts))
-        
+        num_eth_pkts = int(math.floor(n_pkts))
+        #if last_pkt_size >0:
+        #	num_eth_pkts+=1
         #print "NUM PKTS: %f" % n_pkts
         
-        return num_eth_pkts
+        return num_eth_pkts,last_pkt_size

@@ -8,24 +8,24 @@ import math
 
 class Packet(object):
     """ This class represents a network packet """
-    def __init__(self, time, size,id, cpri_option,cell,split=1,coding=23,src="a", dst="z", interval=0.004, mtu=1500):
+    def __init__(self, time, size,id, cpri_option,cell,split=1,coding=23,src="a", dst="z", interval=0.004, mtu=1500, qos=1):
         self.time = time# creation time
         self.id = id # packet id
         self.src = src #packet source address
         self.dst = dst #packet destination address
         self.cell = cell
-        self.size = mtu
+        self.size = size
         self.interval = interval
+        self.qos = qos
 
         #BRUNO
         self.mtu = mtu
         self.split = split
-        self.cpri_option = cpri_option # Fixed packet size
-        self.coding = coding #same as MCS
-        size_mbps=(calc.UL_splits[str(self.cpri_option)][1]['bw']) * interval
+        self.cpri_option = cpri_option 
+        self.coding = coding 
+        size_mbps=(calc.UL_splits[str(self.cpri_option)][split]['bw']) * interval
         self.cpri_size = calc.size_bits(size_mbps)
         #print "SIZE PKT: %f" % self.size
-        #self.prb = calc.CPRI[self.cpri_option]['PRB']
         #BRUNO
 
     def __repr__(self):
@@ -34,7 +34,7 @@ class Packet(object):
 
 class PacketGenerator(object):
     """This class represents the packet generation process """
-    def __init__(self, env, id, ONU, bbu_store,cell,cpri_option=1,interval=0.004, finish=float("inf")):
+    def __init__(self, env, id, ONU, bbu_store,cell,cpri_option=1,interval=0.004, finish=float("inf"), qos=1, fog_node=None):
         self.id = id # packet id
         self.ONU = ONU
         self.cell = cell
@@ -42,9 +42,11 @@ class PacketGenerator(object):
         self.env = env # Simpy Environment
         self.cpri_option = None # Fixed packet size
         self.finish = finish # packe end time
+        self.qos = qos
+        self.fog_node = fog_node
+
         self.packets_sent = 0 # packet counter
         self.eth_overhead = 0.0
-        #self.pkt_size = 306000  #CPRI 1 pkt size
         self.pkt_size = 1500 # ethernet MTU SIZE
         self.number_of_burst_pkts = 1
         self.interval = interval #intervalo entres os Ack
@@ -62,14 +64,13 @@ class PacketGenerator(object):
         split=1
         bw_bytes = calc.get_bytes_cpri_split(cpri_option,split,self.interval)
 
-        n_pkts = calc.num_eth_pkts(cpri_option,split,self.interval,MTU_size)
+        n_pkts, last_pkt_size = calc.num_eth_pkts(cpri_option,split,self.interval,MTU_size)
         
-        last_pkt_size= bw_bytes % MTU_size
-        if last_pkt_size == 0:
-            last_pkt_size = MTU_size
+        #last_pkt_size= bw_bytes % MTU_size
 
         self.eth_overhead = 26.0/pkt_size
-        self.number_of_burst_pkts = int(math.ceil(n_pkts))
+        self.number_of_burst_pkts = n_pkts
+        
         self.last_pkt_size=last_pkt_size
 
         #print self.number_of_burst_pkts
@@ -89,19 +90,39 @@ class PacketGenerator(object):
             for i in range(self.number_of_burst_pkts):
                 self.packets_sent += 1
                 p = Packet(self.env.now,self.pkt_size ,self.packets_sent, self.cpri_option,\
-                self.cell,src=self.id,interval=self.interval,mtu=self.pkt_size)
+                self.cell,src=self.id,interval=self.interval,mtu=self.pkt_size,qos=self.qos)
                 p_list.append(p)
             if self.last_pkt_size>0:
+                self.packets_sent += 1
                 p = Packet(self.env.now,self.last_pkt_size ,self.packets_sent, self.cpri_option,\
-                self.cell,src=self.id,interval=self.interval,mtu=self.pkt_size)
+                self.cell,src=self.id,interval=self.interval,mtu=self.pkt_size,qos=self.qos)
                 p_list.append(p)
 
 			#Cpri over Ethernet overhead timeout
             #self.env.timeout(self.eth_overhead)
             #alloc_signal{ONU,pkt,burst}
-            alloc_signal = {'onu':self.ONU,'burst':self.number_of_burst_pkts,'pkt':p_list[0]}
+            if self.last_pkt_size > 0:
+                #print "NUMBER OF BURST PACKETS ANTES DO ALLOC ########################################"
+                burst_with_extra_pkt=self.number_of_burst_pkts + 1
+                #print "BURST: %d\n" % burst_with_extra_pkt
+                alloc_signal = {'onu':self.ONU,'burst':burst_with_extra_pkt,'pkt':p_list[0]}
+            else:
+                #print "NUMBER OF BURST PACKETS ANTES DO ALLOC ########################################"
+                #print "BURST: %d\n" % self.number_of_burst_pkts
+                alloc_signal = {'onu':self.ONU,'burst':self.number_of_burst_pkts,'pkt':p_list[0]}
+            
             self.bbu_store.put(alloc_signal)
-            #send pkt to ONU
+                
+            #send pkt forward
 
-            for p in p_list:
-                self.ONU.ULInput.put(p) # put the packet in ONU port
+            # check if FOG NODE is active
+            if self.fog_node != None:
+                #if so, send traffic to FOG Node port
+                for p in p_list:
+                    self.fog_node.ULInput.put(p) # put the packet in FOG NODE port
+                    
+            # otherwise, send to ONU port directly
+            else:
+                for p in p_list:
+                    self.ONU.ULInput.put(p) # put the packet in ONU port
+            number_of_burst_pkts=0

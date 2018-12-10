@@ -37,7 +37,7 @@ class BBU(object):
 		while True:
 			pkt = yield self.proc_buffer.get()
 			if self.pkt == None:
-				print "STARTING BUFFER OF BBU %d" % self.bbu_id
+				#print "STARTING BUFFER OF BBU %d" % self.bbu_id
 				self.pkt = pkt
 				self.buffer_pkts+=1
 				
@@ -46,21 +46,23 @@ class BBU(object):
 				self.expected_bw = calc.get_bytes_cpri_split(pkt.cpri_option,pkt.split,pkt.interval)
 				###
 				
-				self.expected_pkts = calc.num_eth_pkts(pkt.cpri_option,pkt.split,pkt.interval,pkt.size)
+				self.expected_pkts,self.last_pkt_size = calc.num_eth_pkts(pkt.cpri_option,pkt.split,pkt.interval,pkt.size)
+				if self.last_pkt_size >0:
+					self.expected_pkts+=1
 
-				print "CPRI %d SPLIT %d INTERVAL %f EXPECTED PKTs == %d" % (pkt.cpri_option,pkt.split,pkt.interval,self.expected_pkts)
+				#print "CPRI %d SPLIT %d INTERVAL %f EXPECTED PKTs == %d" % (pkt.cpri_option,pkt.split,pkt.interval,self.expected_pkts)
 				
 				yield self.env.timeout(0)
 			else:
 				self.buffer_pkts+=1
 				self.buffer_bytes+=pkt.size
-				print "BBU %d ; CELL %d ; BUFFER BITS %f ; CPRI %d ; EXPECTED PKTs %d ; TIME: %f" % \
+				#print "BBU %d ; CELL %d ; BUFFER BITS %f ; CPRI %d ; EXPECTED PKTs %d ; TIME: %f" % \
 				(self.bbu_id,pkt.cell,self.buffer_pkts,pkt.cpri_option,self.expected_pkts, self.env.now)
 
 				if self.buffer_pkts == self.expected_pkts:
-					print "BUFFER PKTs == EXPECTED PKTs AT BBU %d ! YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" % self.bbu_id
-					print "BUFFER_pkts: %d BUFFER_size: %f EXPECTED_bytes: %f ; BW CPRI %d SPLIT %d: %d" \
-					% (self.buffer_pkts,self.buffer_bytes,self.expected_bw,pkt.cpri_option,pkt.split, self.expected_pkts)
+					#print "BUFFER PKTs == EXPECTED PKTs AT BBU %d ! YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" % self.bbu_id
+					#print "BUFFER_pkts: %d BUFFER_size: %f EXPECTED_bytes: %f ; BW CPRI %d SPLIT %d: %f" \
+					#% (self.buffer_pkts,self.buffer_bytes,self.expected_bw,pkt.cpri_option,pkt.split, self.expected_pkts)
 					
 					self.buffer_pkts = 0
 					yield self.env.process(self.Proc(pkt))
