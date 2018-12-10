@@ -8,6 +8,7 @@ import simtime as l
 from sklearn import linear_model
 import pandas as pd
 import numpy as np
+import copy
 
 class DBA(object):
     """DBA Parent class, heritated by every kind of DBA"""
@@ -222,8 +223,11 @@ class slot_table(object):
         self.slotn = 0
         self.slote = 0
         self.next_time = 0
+        print "criando table_g"
         self.table_g =self.construct(self.table_g,self.g_slots,self.start_g)
+        print "criando table_n"
         self.table_n = self.construct(self.table_n,self.n_slots,self.start_n)
+        print "criando table_e"
         self.table_e = self.construct(self.table_e,self.e_slots,self.next_time)
 
 
@@ -232,13 +236,17 @@ class slot_table(object):
         table =  [[{}]*(num_slots)]*len(self.wavelengths)
         #construct extra area
         print "----"*10
-        print start
+        print("table start at {}".format(start))
         print "----"*10
+        print("total de sots {}".format(num_slots))
         for i in range(len(self.wavelengths)):
             self.next_time = start
             for j in range(num_slots):
                 table[i][j] = {"onu": None, "start": self.next_time, "end": self.next_time + self.slot_time}
                 self.next_time = self.next_time + self.slot_time
+        print "----"*10
+        print("table end at {}".format(self.next_time))
+        print "----"*10
         return table
 
     def update_w(self):
@@ -328,7 +336,7 @@ class slot_table(object):
 
 
 class PM_DWBA(M_DWBA):
-    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs,bandwidth=25000000000,delay_limit=0.001250,distance=20):
+    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs,bandwidth=10000000000,delay_limit=0.001250,distance=20):
         DBA.__init__(self,env,monitoring,grant_store,bandwidth,delay_limit)
         self.ONUs = ONUs
         self.distance= distance
@@ -375,7 +383,7 @@ class PM_DWBA(M_DWBA):
 
     def calc_slot_time(self):
 
-        bits = 1250  * 8
+        bits = 1500  * 8
         #bits = 9422  * 8
         slot_time = bits/float(self.bandwidth)
         return slot_time
@@ -413,7 +421,6 @@ class PM_DWBA(M_DWBA):
                         self.predictions_list[alloc['onu'].oid] += pred
                         print("{} - onu {} preds {}".format(self.env.now,alloc['onu'].oid,self.predictions_list))
                         for i,p in enumerate(pred):
-                            print pq.keys()
                             if not ( self.cycle +( i+1) in pq.keys() ):
                                 pq[self.cycle +( i+1)] = []
                             for burst in range(p):
@@ -424,7 +431,7 @@ class PM_DWBA(M_DWBA):
                     if alloc['burst'] > self.predictions_list[alloc['onu'].oid][0]:
                         print "is greater"
                         pred_increment = alloc['burst'] - self.predictions_list[alloc['onu'].oid][0]
-                        gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[0], 'grant': []}
+                        #gate = {'name': 'gate', 'onu': alloc['onu'].oid, 'wavelength': self.wavelengths[0], 'grant': []}
                         for burst in range(pred_increment):
                             q.append(alloc['onu'].oid)
                         self.predictions_list[alloc['onu'].oid].pop(0)
@@ -462,7 +469,7 @@ class PM_DWBA(M_DWBA):
                     if self.cycle_tables[c].check_avail_n():
                         grant = self.cycle_tables[c].allocate_n(onu)
                         if len(grant) > 0:
-                            self.GATE[onu][grant].append( grant )
+                            self.GATE[onu]["grant"].append( grant )
                             continue
                         else:
                             print("DEU MERDA CARALHO AQUI")
@@ -549,8 +556,11 @@ class PM_DWBA(M_DWBA):
                 self.active_wavelenghts.append(self.wavelengths[w])
 
             self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelengths))
-            for i,gate in enumerate(self.GATE):
-                self.grant_store.put(gate)
+            for gate in self.GATE:
+
+                msg = copy.copy(gate)
+                self.grant_store.put(msg)
+            for i in range(len(self.GATE)):
                 self.GATE[i]['grant']=[]
             self.alloc_list1 = []
             self.alloc_list2 = []

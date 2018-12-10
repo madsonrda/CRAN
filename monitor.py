@@ -41,14 +41,14 @@ class monitor(object):
     def fronthaul_delay(self,pkt_time):
         #print self.env.now
         delay = self.get_delay(pkt_time)
-        # if delay > 0.000250:
-        #     print "..."*10
-        #     print self.env.now
-        #     print ""
-        #     print delay
-        #     print "..."*10
-        # #print delay
-        self.fronthaul_delay_file.write("{},{},{}\n".format(delay,self.env.now,self.cycle))
+        if delay > 0.001250:
+            print "..."*10
+            print self.env.now
+            print "ATRASO"
+            print delay
+            print "..."*10
+        #print("delay = {}".format(delay))
+        self.fronthaul_delay_file.write( "{},{},{}\n".format(delay,self.env.now,self.cycle) )
     def fronthaul_active_wavelengths(self,wavelengths):
         self.fronthaul_dwba_wavelengths.write("{},{},{}\n".format(wavelengths,self.env.now,self.cycle))
     def grant_usage(self,start,end,consumption):
