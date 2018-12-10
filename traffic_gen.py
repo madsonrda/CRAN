@@ -16,7 +16,10 @@ class Packet(object):
         self.cell = cell
         self.size = mtu
         self.interval = interval
-        self.qos = 1
+        if id % 2 == 0:
+            self.qos = 1
+        else:
+            self.qos = 4
 
         #BRUNO
         self.mtu = mtu

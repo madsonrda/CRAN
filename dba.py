@@ -528,11 +528,12 @@ class PM_DWBA(M_DWBA):
 
 
             if len(pq4) > 0:
-                for c in pq4:
+                ciclos = sorted(pq4.keys())
+                for c in ciclos:
                     for onu in pq4[c]:
                         if not ( c in self.cycle_tables.keys() ):
                             print("{} - create cycle {} table by pred, onu {}".format(self.env.now,self.cycle +( i+1),onu))
-                            c_start = self.cycle_tables[c-1] + self.cycle_interval
+                            c_start = self.cycle_tables[c-1].start_g + self.cycle_interval
                             self.cycle_tables[c] = slot_table(self.normal_slots,
                                 self.grant_slots,self.higher_delay_slots,c_start,
                                 c_start + (self.distance/self.lightspeed), self.slot_time,self.wavelengths)
