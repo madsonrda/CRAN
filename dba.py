@@ -442,7 +442,7 @@ class PM_DWBA(M_DWBA):
                         self.predictions_list[alloc['onu'].oid].pop(0)
                     else:
                         print "is equal"
-                        print("{} - onu {} - cycle {}".format(self.env.now,alloc['onu'].oid,self.cycle))
+                        print("{} - onu {} - cycle {} - burst {}".format(self.env.now,alloc['onu'].oid,self.cycle,alloc['burst']))
                         self.predictions_list[alloc['onu'].oid].pop(0)
         return pq,q
 
@@ -543,7 +543,7 @@ class PM_DWBA(M_DWBA):
                                 self.GATE[onu]['grant'].append( grant )
                                 continue
                             else:
-                                print("DEU MERDA AQUI")
+                                print("pq4 DEU MERDA AQUI")
                                 continue
 
 
