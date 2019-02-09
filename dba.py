@@ -313,6 +313,7 @@ class slot_table(object):
         self.table_e[self.w][self.slote]["onu"] = onu
         slot = self.slote
         self.slote += 1
+        print "!!!!!!!! ALOCOU E ; ONU: %d ; NUM SLOTS: %d ; SLOT E:%d  " % (onu,self.e_slots, self.slote)
         return {'start': self.table_e[self.w][slot]["start"],
             'end': self.table_e[self.w][slot]["end"], 'wavelength': self.wavelengths[self.w]}
 
@@ -336,7 +337,7 @@ class slot_table(object):
 
 
 class PM_DWBA(M_DWBA):
-    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs,bandwidth=10000000000,delay_limit=0.001250,distance=20):
+    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs,bandwidth=10000000000,delay_limit=0.000250,distance=20):
         DBA.__init__(self,env,monitoring,grant_store,bandwidth,delay_limit)
         self.ONUs = ONUs
         self.distance= distance
@@ -365,13 +366,27 @@ class PM_DWBA(M_DWBA):
             self.grant_history[i] = {'cycle': [],  'slots': []}
             self.GATE[i] = {'name': 'gate', 'id': i, 'wavelength': self.wavelengths[0], 'grant': []}
         self.slot_time = self.calc_slot_time()
+        print "SLOT TIME: %f" % self.slot_time
         self.normal_slots = int(math.floor((self.time_limit - 2*self.propagation_delay)/float(self.slot_time)))
+        print "NORMAL SLOTS: %d" % self.normal_slots
         if self.normal_slots < 1:
             print "NUM SLOTS leq 1"
         self.tot_slots = int(math.floor((self.time_limit - self.propagation_delay)/float(self.slot_time)))
+        print "TOT SLOTS: %d" % self.tot_slots
         self.grant_slots = self.tot_slots - self.normal_slots
+        print "GRANT SLOTS: %d" % self.grant_slots
+        
+        # 500us
         self.tot_slots = int(math.floor(( self.cycle_interval - (self.time_limit + 2*self.propagation_delay))/float(self.slot_time)))
+
+        # 2000us
+        #self.tot_slots = int(math.floor(( self.cycle_interval - (self.time_limit + 8*self.propagation_delay))/float(self.slot_time)))
+
+        # 5000us
+        #self.tot_slots = int(math.floor(( self.cycle_interval - (self.time_limit + 20*self.propagation_delay))/float(self.slot_time)))
+
         self.higher_delay_slots = self.tot_slots - self.normal_slots - self.grant_slots
+        print "HIGHER DELAY SLOTS: %d" % self.higher_delay_slots
         if self.higher_delay_slots < 1:
             print "Higher SLOTS leq 1"
         self.cycle_tables = {}
@@ -528,6 +543,7 @@ class PM_DWBA(M_DWBA):
 
 
             if len(pq4) > 0:
+                print "LEN Q4: %f" % len(q4)
                 ciclos = sorted(pq4.keys())
                 for c in ciclos:
                     for onu in pq4[c]:
@@ -557,6 +573,38 @@ class PM_DWBA(M_DWBA):
                 self.active_wavelenghts.append(self.wavelengths[w])
 
             self.monitoring.fronthaul_active_wavelengths(len(self.active_wavelengths))
+            
+            # self.cycle_tables[self.cycle].slotn # em uso slot N
+            #self.cycle_tables[self.cycle].slote # em uso slot E
+            # self.cycle_tables[self.cycle].slotg # em uso slot G
+            # self.cycle_tables[self.cycle].n_slots # total slot N
+            #self.cycle_tables[self.cycle].e_slots # total slot E
+            # self.cycle_tables[self.cycle].g_slots # total slot G
+
+
+            if self.cycle > 0: 
+                cycle = (self.cycle - 1)
+            else:
+                cycle = 0
+            print("\n\n >>>>>>>>>>>>> WHOLE CYCLE TABLE SLOT USAGE: ACTUAL CYCLE: %d") % self.cycle
+            for each in self.cycle_tables:
+                #slotg = self.cycle_tables[each].slotg
+                #slotn = self.cycle_tables[each].slotg
+                #slote = self.cycle_tables[each].slotg
+                #g_slots = self.cycle_tables[each].g_slots
+                #n_slots = self.cycle_tables[each].n_slots
+                #e_slots = self.cycle_tables[each].e_slots
+                
+                diff_G = (float(self.cycle_tables[each].slotg) / self.cycle_tables[each].g_slots)* 100
+                diff_N = (float(self.cycle_tables[each].slotn) / self.cycle_tables[each].n_slots)* 100
+                diff_E = (float(self.cycle_tables[each].slote) / self.cycle_tables[each].e_slots)* 100
+                
+                print("CYCLE : %d  -> Total G: %d In use G: %d DIFF G= %0.3f ; Total N: %d In use N: %d DIFF N= %0.3f ; Total E: %d In use E: %d DIFF E= %0.3f ") \
+                % (each, self.cycle_tables[each].g_slots, self.cycle_tables[each].slotg, diff_G, self.cycle_tables[each].n_slots, \
+                    self.cycle_tables[each].slotn, diff_N, self.cycle_tables[each].e_slots, self.cycle_tables[each].slote, diff_E)
+            print("---\n\n")
+
+
             for gate in self.GATE:
 
                 msg = copy.copy(gate)

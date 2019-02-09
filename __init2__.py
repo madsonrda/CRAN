@@ -11,7 +11,7 @@ from onu import ONU
 from bbupool import BBUPool
 from traffic_gen import PacketGenerator, Packet
 from monitor import monitor
-#from spliting_ctl import Orchestrator as Splitter
+from splitting_ctl import Orchestrator as Splitter
 
 log.basicConfig(filename='example.log',level=log.DEBUG) # filemode='w'
 
@@ -61,9 +61,9 @@ wavelength1 = 200
 #link_midhaul1.activate_wavelength(wavelength1,dc_central_id)#wavelength e bbupoll_id
 
 #criar dc local 1
-split1=1
+split=7
 distance1 = 1
-dc_local1 = BBUPool(env,1,wavelength1,split1,distance1)
+dc_local1 = BBUPool(env,1,wavelength1,split,distance1)
 
 
 #dc_local1_cells = 30
@@ -115,14 +115,18 @@ link_dc_local1.set_Aside_nodes({0:olt1})
 
 bbu1 = env.process(bbu_sched(olt1,bbu_store1))
 
-# init split algorithm
-#splitter1= Splitter(env)
-#splitter1.init_bbu_dict(cell1, edge_BBUs_obj_list , dc_BBUs_obj_list, split)
-
+# init splitting algorithm
+splitter1= Splitter(env)
+#dcs=[]
+#dcs.append(dc_local1)
+split1=1
+dc_local_BBUs = dc_local1.BBU_DICT
+splitter1.init_bbu_dict(cell1, pkt_gen1 , dc_local_BBUs, split1)
+splitter1.set_dba(olt1.get_dba())
 
 # 'TIDAL' EFFECT
 #tc(env,pkt_gen1,0.5)
 #tc(env,pkt_gen2,0.5)
 
 #start simulation
-env.run(until=0.5)
+env.run(until=0.25)

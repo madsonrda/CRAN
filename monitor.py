@@ -79,7 +79,7 @@ class monitor(object):
 
         sec_before = self.wavelengths[wavelength]['sec_UL_timestamp']
         UL_bps = self.wavelengths[wavelength]['UL_bps']
-        if self.env.now > (sec_before + 1):
+        if self.env.now > (sec_before + self.interval):
             #Then a second has passed. Time to flush counter
             print "MONITOR - passou 1 segundo - %f > %f" % (self.env.now, sec_before)
             print "WAVELENGTH %d - SECOND BPS == %f" % (wavelength,UL_bps)
@@ -93,12 +93,12 @@ class monitor(object):
         self.wavelengths[wavelength]['UL_bps']+=pkt_size
         self.wavelengths[wavelength]['last_UL_timestamp'] = self.env.now
 
-        self.bandwidth_UL_file.write("{},{},{},{}\n".format(wavelength,oid,pkt_size,timestamp))
+        self.bandwidth_UL_file.write("{},{},{},{}\n".format(wavelength,oid,pkt_size,self.env.now))
 
     def get_UL_bw(self,wavelength):
         """Returns last UL usage in bps"""
         sec_before = self.wavelengths[wavelength]['sec_UL_timestamp']
-        if self.env.now > (sec_before + 2):
+        if self.env.now > (sec_before + self.interval*2):
             # IF its 2 seconds ahead of last timestamp, it means no more pkts arrived since then
             return 0
         return self.wavelengths[wavelength]['last_UL_bps']
@@ -108,3 +108,29 @@ class monitor(object):
 
         self.wavelengths[wavelength] = {"active": 0, "UL_bps": 0, "last_UL_bps": 0,
         "last_UL_timestamp": 0.0, "sec_UL_timestamp": self.env.now, "min_UL_timestamp": self.env.now}
+
+    def set_slot_usage(self,oid, wavelength, pkt_size, timestamp):
+        """Increment UL bandwidth usage in wavelength X. Flushes after a second"""
+        try:
+            aux = self.wavelengths[wavelength]
+        except:
+            print "CREATED WAVELENGTH %d" %wavelength
+            self.create_wavelength(wavelength)
+
+        sec_before = self.wavelengths[wavelength]['sec_UL_timestamp']
+        UL_bps = self.wavelengths[wavelength]['UL_bps']
+        if self.env.now > (sec_before + self.interval):
+            #Then a second has passed. Time to flush counter
+            print "MONITOR - passou 1 segundo - %f > %f" % (self.env.now, sec_before)
+            print "WAVELENGTH %d - SECOND BPS == %f" % (wavelength,UL_bps)
+            self.wavelengths[wavelength]['last_UL_bps'] = UL_bps
+            self.bandwidth_UL2_file.write("{},{},{},{}\n".format(wavelength, UL_bps, self.env.now, sec_before))
+
+            #Flush counters and reset timestamp
+            self.wavelengths[wavelength]['UL_bps'] = 0
+            self.wavelengths[wavelength]['sec_UL_timestamp'] = self.env.now
+
+        self.wavelengths[wavelength]['UL_bps']+=pkt_size
+        self.wavelengths[wavelength]['last_UL_timestamp'] = self.env.now
+
+        self.bandwidth_UL_file.write("{},{},{},{}\n".format(wavelength,oid,pkt_size,self.env.now))

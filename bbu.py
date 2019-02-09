@@ -6,7 +6,7 @@ import simtime as l
 interval = 0.004
 
 class BBU(object):
-	def __init__(self,env,bbu_id,bbupoll_id,post_proc_buffer=None,split=7):
+	def __init__(self,env,bbu_id,bbupoll_id,post_proc_buffer=None,split=1):
 		self.bbu_id = bbu_id
 		self.bbupoll_id = bbupoll_id
 		self.env = env
@@ -86,8 +86,9 @@ class BBU(object):
 
 	def Proc(self,pkt):
 		##print "PKT sendo processado"
-		if self.bbupoll_id == 0:
+		if self.bbupoll_id == -1:
 			#print "Pacote %d chegou no DC CENTRAL! SRC-ID:%d ;CPRI-option:%d ;Size:%d ;Split:%d " % (pkt.id,pkt.src,pkt.cpri_option,pkt.size,pkt.split)
+			del pkt
 			pass
 		if pkt.split != self.split:
 			#print "SPLITOU DE %d para %d - Pacote %d de SRC-ID:%d na BBU-ID: %d" % (pkt.split,self.split,pkt.id,pkt.src,self.bbu_id)

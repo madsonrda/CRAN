@@ -39,7 +39,8 @@ class OLT(object):
             pass
             #self.dba = IPACT(self.env, max_grant_size, self.grant_store)
 
-
+    def get_dba(self):
+        return self.dba            
 
     def OLT_GrantSender(self):
         """A process which sends a grant message to ONU"""

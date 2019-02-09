@@ -8,7 +8,7 @@ import math
 
 class Packet(object):
     """ This class represents a network packet """
-    def __init__(self, time, size,id, cpri_option,cell,split=1,coding=23,src="a", dst="z", interval=0.004, mtu=1500, qos=1):
+    def __init__(self, time, size,id, cpri_option,cell,split=1,coding=23,src="a", dst="z", interval=0.004, mtu=1500, qos=4):
         self.time = time# creation time
         self.id = id # packet id
         self.src = src #packet source address
@@ -16,11 +16,13 @@ class Packet(object):
         self.cell = cell
         self.size = size
         self.interval = interval
-        if id % 2 == 0:
-            self.qos = 1
-        else:
-            self.qos = 4
+        # if id % 2 == 0:
+        #     self.qos = 1
+        # else:
+        #     self.qos = 4
 
+        self.qos = qos
+        
         #BRUNO
         self.mtu = mtu
         self.split = split
@@ -37,7 +39,7 @@ class Packet(object):
 
 class PacketGenerator(object):
     """This class represents the packet generation process """
-    def __init__(self, env, id, ONU, bbu_store,cell,cpri_option=1,interval=0.004, finish=float("inf"), qos=1, fog_node=None):
+    def __init__(self, env, id, ONU, bbu_store,cell,cpri_option=1,interval=0.004, finish=float("inf"), qos=4, split=1):
         self.id = id # packet id
         self.ONU = ONU
         self.cell = cell
@@ -46,7 +48,7 @@ class PacketGenerator(object):
         self.cpri_option = None # Fixed packet size
         self.finish = finish # packe end time
         self.qos = qos
-        self.fog_node = fog_node
+        self.split = split
 
         self.packets_sent = 0 # packet counter
         self.eth_overhead = 0.0
@@ -56,7 +58,7 @@ class PacketGenerator(object):
         self.CpriConfig(cpri_option,self.pkt_size)# set CPRI configurations
         self.action = env.process(self.run())  # starts the run() method as a SimPy process
 
-    def CpriConfig(self, cpri_option,pkt_size):
+    def CpriConfig(self, cpri_option,pkt_size,split=1):
 
         self.cpri_option = cpri_option
         #print("{}:{} - my cpri is {}".format(self.env.now,self.id,self.cpri_option))
@@ -64,7 +66,6 @@ class PacketGenerator(object):
         # ETH PKTs CALCULATION
         #BW= ((BW_bits * interval_pkt_sec) / 8) / eth_pktsize_byte
         MTU_size = pkt_size
-        split=1
         bw_bytes = calc.get_bytes_cpri_split(cpri_option,split,self.interval)
 
         n_pkts, last_pkt_size = calc.num_eth_pkts(cpri_option,split,self.interval,MTU_size)
@@ -117,15 +118,9 @@ class PacketGenerator(object):
             self.bbu_store.put(alloc_signal)
                 
             #send pkt forward
+            for p in p_list:
+                self.ONU.ULInput.put(p) # put the packet in ONU port
 
-            # check if FOG NODE is active
-            if self.fog_node != None:
-                #if so, send traffic to FOG Node port
-                for p in p_list:
-                    self.fog_node.ULInput.put(p) # put the packet in FOG NODE port
-                    
-            # otherwise, send to ONU port directly
-            else:
-                for p in p_list:
-                    self.ONU.ULInput.put(p) # put the packet in ONU port
-            number_of_burst_pkts=0
+    def set_split(self,split):
+        self.split = split
+        self.CpriConfig(self.cpri_option,self.pkt_size,split)

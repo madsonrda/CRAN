@@ -474,8 +474,8 @@ log.debug("FINISHING LTE and CPRI CALCULATIONS - RIGHT BEFORE SIMULATION BEGIN")
 
 for cpri in UL_splits:
 	for split in UL_splits[cpri]:
-		#print "CPRI %s Split %d BW: %f" % (cpri,split,UL_splits[cpri][split]['bw'])
-		pass
+		print "CPRI %s Split %d BW: %f" % (cpri,split,UL_splits[cpri][split]['bw'])
+		#pass
 
 ####################################
 
