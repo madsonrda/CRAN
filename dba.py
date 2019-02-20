@@ -354,6 +354,12 @@ class PM_DWBA(M_DWBA):
         self.AllocGathering = self.env.event()
         self.alloc_counter = 0
 
+        self.cycle_tables = {}
+        self.cycle = 0
+        self.predictions_list = []
+        for i in range(len(self.ONUs)):
+            self.predictions_list.append([])
+
         # self.window = 5    # past observations window size
         # self.predict = 10 # number of predictions
         self.grant_history = range(len(self.ONUs)) #grant history per ONU (training set)
@@ -377,7 +383,7 @@ class PM_DWBA(M_DWBA):
         print "GRANT SLOTS: %d" % self.grant_slots
         
         # 500us
-        self.tot_slots = int(math.floor(( self.cycle_interval - (self.time_limit + 2*self.propagation_delay))/float(self.slot_time)))
+        #self.tot_slots = int(math.floor(( self.cycle_interval - (self.time_limit + self.propagation_delay))/float(self.slot_time)))
 
         # 2000us
         #self.tot_slots = int(math.floor(( self.cycle_interval - (self.time_limit + 8*self.propagation_delay))/float(self.slot_time)))
@@ -385,15 +391,17 @@ class PM_DWBA(M_DWBA):
         # 5000us
         #self.tot_slots = int(math.floor(( self.cycle_interval - (self.time_limit + 20*self.propagation_delay))/float(self.slot_time)))
 
-        self.higher_delay_slots = self.tot_slots - self.normal_slots - self.grant_slots
+        
+        # calculo do restante do tempo/slots dentro do ciclo apos o limite de tempo
+        #   mesma conta de normal slots, exceto que vai comecar apos o time_limit e tem o guard interval no final
+        self.higher_delay_time = self.cycle_interval - self.time_limit - 2*self.propagation_delay - self.guard_interval
+        self.higher_delay_slots = int(math.floor(self.higher_delay_time/float(self.slot_time)))
+
+        print "HIGHER DELAY TIME: %f" % self.higher_delay_time
         print "HIGHER DELAY SLOTS: %d" % self.higher_delay_slots
+        print "ALL SLOTS IN CYCLE INTERVAL OF %d ms: %d" % (self.cycle_interval*1000, self.higher_delay_slots+self.normal_slots+self.grant_slots)
         if self.higher_delay_slots < 1:
             print "Higher SLOTS leq 1"
-        self.cycle_tables = {}
-        self.cycle = 0
-        self.predictions_list = []
-        for i in range(len(self.ONUs)):
-            self.predictions_list.append([])
 
 
     def calc_slot_time(self):
@@ -459,9 +467,33 @@ class PM_DWBA(M_DWBA):
                         print "is equal"
                         print("{} - onu {} - cycle {} - burst {}".format(self.env.now,alloc['onu'].oid,self.cycle,alloc['burst']))
                         self.predictions_list[alloc['onu'].oid].pop(0)
+                    
+        
+        # # IF: There is no more future predictions available for an ONU
+        # # THEN: Run PREDICTION again before ONU runs out of predicted slots
+        # if len( alloc_list) > 0:
+        #     for alloc in alloc_list:
+        #         if len(self.predictions_list[alloc['onu'].oid]) == 0:
+        #             pred = self.predictor(alloc['onu'].oid)
+        #             if len(pred) > 0:
+        #                 self.predictions_list[alloc['onu'].oid] += pred
+        #                 print("{} - onu {} preds {}".format(self.env.now,alloc['onu'].oid,self.predictions_list))
+        #                 for i,p in enumerate(pred):
+        #                     if not ( self.cycle +( i+1) in pq.keys() ):
+        #                         pq[self.cycle +( i+1)] = []
+        #                     for burst in range(p):
+        #                         pq[self.cycle +( i+1)].append(alloc['onu'].oid)
+        #             for burst in range(alloc['burst']):
+        #                 q.append(alloc['onu'].oid)
+
         return pq,q
 
     def pred_allocation(self,pq):
+        print "ENTROU PRED_ALLOCATION"
+        print pq
+        for cada in pq:
+            print cada
+
         if len(pq) > 0:
             ciclos = sorted(pq.keys())
             for c in ciclos:
@@ -500,12 +532,18 @@ class PM_DWBA(M_DWBA):
                 self.cycle_tables[self.cycle] = slot_table(self.normal_slots,
                     self.grant_slots,self.higher_delay_slots,self.env.now,
                     self.granting_start, self.slot_time,self.wavelengths)
-                print "entrei aqui"
+                print "entrei CRIACAO DE SLOT TABLE APOS ALLOC_GATHERING"
             pq1,q1 = self.check_pred(self.alloc_list1)
             pq2,q2 = self.check_pred(self.alloc_list2)
             pq3,q3 = self.check_pred(self.alloc_list3)
             pq4,q4 = self.check_pred(self.alloc_list4)
             print("fim check pred no ciclo {}".format(self.cycle))
+
+            # if pop1 > 0:
+            #     self.cycle_tables[self.cycle] = slot_table(self.normal_slots,
+            #         self.grant_slots,self.higher_delay_slots,self.env.now,
+            #         self.granting_start, self.slot_time,self.wavelengths)
+            #     print "entrei CRIACAO DE SLOT TABLE APOS ALLOC_GATHERING"
 
 
             queues = [q1,q2,q3,q4]
@@ -586,6 +624,8 @@ class PM_DWBA(M_DWBA):
                 cycle = (self.cycle - 1)
             else:
                 cycle = 0
+            
+            #-------- MONITORING ---------
             print("\n\n >>>>>>>>>>>>> WHOLE CYCLE TABLE SLOT USAGE: ACTUAL CYCLE: %d") % self.cycle
             for each in self.cycle_tables:
                 #slotg = self.cycle_tables[each].slotg
@@ -603,7 +643,7 @@ class PM_DWBA(M_DWBA):
                 % (each, self.cycle_tables[each].g_slots, self.cycle_tables[each].slotg, diff_G, self.cycle_tables[each].n_slots, \
                     self.cycle_tables[each].slotn, diff_N, self.cycle_tables[each].e_slots, self.cycle_tables[each].slote, diff_E)
             print("---\n\n")
-
+            #-------- /MONITORING ---------
 
             for gate in self.GATE:
 

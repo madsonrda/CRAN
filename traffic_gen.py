@@ -8,7 +8,7 @@ import math
 
 class Packet(object):
     """ This class represents a network packet """
-    def __init__(self, time, size,id, cpri_option,cell,split=1,coding=23,src="a", dst="z", interval=0.004, mtu=1500, qos=4):
+    def __init__(self, time, size,id, cpri_option,cell,split=1,coding=23,src="a", dst="z", interval=0.004, mtu=1500, qos=1):
         self.time = time# creation time
         self.id = id # packet id
         self.src = src #packet source address
@@ -21,7 +21,8 @@ class Packet(object):
         # else:
         #     self.qos = 4
 
-        self.qos = qos
+        #self.qos = qos # if qos==4 it goes to extended slot table
+        self.qos = 1 # if qos==1 it goes to normal slots and (eventually) grant slots
         
         #BRUNO
         self.mtu = mtu
@@ -53,12 +54,12 @@ class PacketGenerator(object):
         self.packets_sent = 0 # packet counter
         self.eth_overhead = 0.0
         self.pkt_size = 1500 # ethernet MTU SIZE
-        self.number_of_burst_pkts = 1
+        self.number_of_burst_pkts = 0
         self.interval = interval #intervalo entres os Ack
         self.CpriConfig(cpri_option,self.pkt_size)# set CPRI configurations
         self.action = env.process(self.run())  # starts the run() method as a SimPy process
 
-    def CpriConfig(self, cpri_option,pkt_size,split=1):
+    def CpriConfig(self, cpri_option,pkt_size,split=5):
 
         self.cpri_option = cpri_option
         #print("{}:{} - my cpri is {}".format(self.env.now,self.id,self.cpri_option))
@@ -77,12 +78,17 @@ class PacketGenerator(object):
         
         self.last_pkt_size=last_pkt_size
 
+        print "CPRI OPTION %d SPLIT %d: %f \
+        BYTES EM %dms: %f \
+        NUM ETH PKTS (MTU 1500): %d " % \
+        (cpri_option,split, calc.get_bw_cpri_split(cpri_option,split), self.interval*1000, bw_bytes, n_pkts)
         #print self.number_of_burst_pkts
         #print bw_bytes
         #print math.ceil(n_pkts)
 
+
     def run(self):
-        """The generator function used in simulations.
+        """The traffoc generator function used in simulations.
         """
         while self.env.now < self.finish:
             # wait for next transmission

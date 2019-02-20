@@ -64,6 +64,8 @@ class Orchestrator(object):
 		# [cell_id][BBU_id]['edge_BBU']=class_obj
 		# [cell_id]['fronthaul_obj']= class_obj
 
+		# the algorithm has to know what fronthaul and bbu objects are assigned to which cell
+
 		num_BBUs = len(cell_id_edge_BBUs)
 		num_dc_BBUs = len(cell_id_dc_BBUs)
 		if num_BBUs == len(cell_id_dc_BBUs): # considering 1 to 1 edge and dc BBUs
@@ -266,76 +268,62 @@ class Orchestrator(object):
 					last_bw_diff=diff_bw
 		self.submit_changes(cell_id,changed_BBU_splits)
 
-	# def low_splitting_dba(self,cell_id):
-	# 	"""
-	# 	project how many slots the lowest consuming & higher priority in 'e' would occupy in 'n' with a lower split
-	# 	if it fits in 'n'
-	# 		send onu back to 'n'
-	# 	otherwise 
-	# 		try to reduce 'n' and place it in 'e' 
-	# 		if still not fitting:
-	# 			reduce another ONU already in 'e' and try projecting again until it fits
-	# 	"""
-	# 	pass
+	def low_splitting_dba(self,cell_id):
+		"""
+		project how many slots the lowest consuming & higher priority in 'e' would occupy in 'n' with a lower split
+		if it fits in 'n'
+			send onu back to 'n'
+		otherwise 
+			try to reduce 'n' and place it in 'e' 
+			if still not fitting:
+				reduce another ONU already in 'e' and try projecting again until it fits
+		"""
+		pass
 
-	# def high_splitting_dba(self,cell_id):
-	# 	"""
-	# 	project how many slots it would occupy in 'e'
-	# 	if there is space in 'e'
-	# 		send onu to 'e'
-	# 	otherwise 
-	# 		try to reduce 'e' and place it in 'e' 
-	# 		if still not fitting:
-	# 			reduce another ONU already in 'e' and try projecting again until it fits
-	# 	"""		
+	def high_splitting_dba(self,cell_id):
+		"""
+		project how many slots it would occupy in 'e'
+		if there is space in 'e'
+			send onu to 'e'
+		otherwise 
+			try to reduce 'e' and place it in 'e' 
+			if still not fitting:
+				reduce another ONU already in 'e' and try projecting again until it fits
+		"""		
 
-
-	# 	# def sim_slot_usage(self,ONU):
-	# 	# 	"""
-	# 	# 		check for slot usage of an ONU
-	# 	# 			its enough to know how many ETH pkts will be generated each at burst (at generation interval)
-	# 	# 		sum and check for total (using dba's function)
-
-	# 	# 		return amount of slots of ONU
-	# 	# 	"""
-	# 	# 	cpri_option = ONU.
-	# 	# 	pkt_size = ONU.
-	# 	# 	split = ONU.
-
-	# 	# 	return self.num_pkts_burst(cpri_option,pkt_size,split):
-	# 	pass
-
-	def sim_slot_usage(self, cpri_option,pkt_size,split=1):
+	def get_sim_slot_usage(self, cpri_option,pkt_size,split=1):
 		""" 
 			Returns the number of packets (same as slots) that a ONU in would generate based on the ONU's: 
 			Gen Interval; CPRI option and Split option.
 		"""
         # ETH PKTs CALCULATION
         # BW= ((BW_bits * interval_pkt_sec) / 8) / eth_pktsize_byte
-
-		MTU_size = pkt_size
-		bw_bytes = calc.get_bytes_cpri_split(cpri_option,split,self.gen_interval)
+        
+		# MTU_size = pkt_size
+		# bw_bytes = calc.get_bytes_cpri_split(cpri_option,split,self.gen_interval)
 		
-		num_eth_pkts,last_pkt_size = calc.num_eth_pkts(cpri_option,split,self.gen_interval,MTU_size)
+		# num_eth_pkts,last_pkt_size = calc.num_eth_pkts(cpri_option,split,self.gen_interval,MTU_size)
 		
-		return num_eth_pkts
+		# return num_eth_pkts
 
+		# NEW slot table \/
+		return calc.get_slot_usage(cpri_option,split,pkt_size)
 
-	def check_splitting_ok(self,cell_id,dict_bbu_splits):
-		"""
-			use sim_slot_usage() for each ONU
+	# def check_splitting_ok(self,cell_id,dict_bbu_splits):
+	# 	"""
+	# 		use sim_slot_usage() for each ONU
 
-			sum their slots
-				if split <= 5, put in slots n or g (if available)
-				if split >= 6, put in slots e
+	# 		sum their slots
+	# 			if split <= 5, put in slots n or g (if available)
+	# 			if split >= 6, put in slots e
 
-			check if bigger than
+	# 		check if bigger than
 
-		"""
-		sum_n = sum_e = sum_g = 0
+	# 	"""
+	# 	sum_n = sum_e = sum_g = 0
 
-		for cada in dict_bbu_splits:
-			self.BBUs_dict[cell_id]['']
+	# 	for cada in dict_bbu_splits:
+	# 		self.BBUs_dict[cell_id]['']
 
 
 
@@ -366,42 +354,45 @@ class Orchestrator(object):
 			# update metrics from our single DBA's cycle table
 			self.updt_metrics()
 
-			for cell_id in self.BBUs_dict.keys():
+			if self.env.now() > 0.15:
 
-				slot_usage_n = (self.actual_slotn / self.actual_n_slots)
-				print "Slot usage (n): %f" % slot_usage_n
+				for cell_id in self.BBUs_dict.keys():
 
-				if (slot_usage_n >= self.high_thold):
-					self.high_splitting_dba(cell_id)
+					slot_usage_n = (self.actual_slotn / self.actual_n_slots)
+					print "Slot usage (n): %f" % slot_usage_n
 
-				elif (slot_usage_n <= self.low_thold):
-					self.low_splitting_dba(cell_id)
+					if (slot_usage_n >= self.high_thold):
+						self.high_splitting_dba(cell_id)
 
-			#print "---> Time now: %d <--- " % self.env.now
-			#print self.BBUs_dict.keys()
-			for cell_id in self.BBUs_dict.keys():
-			# read amount of bytes dropped in midhaul
+					elif (slot_usage_n <= self.low_thold):
+						self.low_splitting_dba(cell_id)
 
-				#phi_metrics,BBU_metrics = self.MID_port.get_metrics()
-				#print cell_id
-				MID_port = self.BBUs_dict[cell_id]['fronthaul_obj'] # get MID port
-				phi_metrics,BBU_metrics = MID_port.get_metrics() # get metrics of MID port
-				MID_max_bw = phi_metrics['max_bw'] # get max BW of MID
-				#print MID_max_bw
-				#print self.high_thold
-				bytes_usage = phi_metrics['UL_bytes_rx_diff'] # get last bytes usage of MID
-				#print "bytes_usage %.3f of MIDport from cell %d" % (bytes_usage,cell_id)
-				print "%.3f" % (bytes_usage/1000.0)
-				#print "HIGH: %.3f" % (self.high_thold * MID_max_bw)
-				#print "LOW: %.3f" % (self.low_thold * MID_max_bw)
-				# default high_thold is a max of 90% in order to trigger splitting updt
-				if (bytes_usage > (self.high_thold * MID_max_bw)):
-					#print "HIGH: %.3f" % (float(self.high_thold * MID_max_bw))
-					self.high_splitting_updt(cell_id, phi_metrics, BBU_metrics)
-				elif (bytes_usage <= (self.low_thold * MID_max_bw)):
-				 	self.low_splitting_updt(cell_id, phi_metrics, BBU_metrics)
-				#print "\n\n"
+				#print "---> Time now: %d <--- " % self.env.now
+				#print self.BBUs_dict.keys()
+				for cell_id in self.BBUs_dict.keys():
+				# read amount of bytes dropped in midhaul
 
+					#phi_metrics,BBU_metrics = self.MID_port.get_metrics()
+					#print cell_id
+					MID_port = self.BBUs_dict[cell_id]['fronthaul_obj'] # get MID port
+					phi_metrics,BBU_metrics = MID_port.get_metrics() # get metrics of MID port
+					MID_max_bw = phi_metrics['max_bw'] # get max BW of MID
+					#print MID_max_bw
+					#print self.high_thold
+					bytes_usage = phi_metrics['UL_bytes_rx_diff'] # get last bytes usage of MID
+					#print "bytes_usage %.3f of MIDport from cell %d" % (bytes_usage,cell_id)
+					print "%.3f" % (bytes_usage/1000.0)
+					#print "HIGH: %.3f" % (self.high_thold * MID_max_bw)
+					#print "LOW: %.3f" % (self.low_thold * MID_max_bw)
+					# default high_thold is a max of 90% in order to trigger splitting updt
+					if (bytes_usage > (self.high_thold * MID_max_bw)):
+						#print "HIGH: %.3f" % (float(self.high_thold * MID_max_bw))
+						self.high_splitting_updt(cell_id, phi_metrics, BBU_metrics)
+					elif (bytes_usage <= (self.low_thold * MID_max_bw)):
+					 	self.low_splitting_updt(cell_id, phi_metrics, BBU_metrics)
+					#print "\n\n"
+
+	#UPDT needed \/
 	def submit_changes(self, cell_id, changed_BBU_splits):
 		# write changes to the EDGE BBU POOL
 		print "SPLITS CHANGED"
@@ -425,6 +416,8 @@ class Orchestrator(object):
 		else:
 			logging.debug("WARNING: No better splitting possible at cell%d. Actual MID BW: %.3f" %(cell_id,MID_max_bw))
 
+	# def set_split_all(self):
+	# 	pass
 
 	def set_dba(self,dba):
 		self.dba= dba
@@ -440,11 +433,11 @@ class Orchestrator(object):
 	def disable_pred(self,cell_ID,bbu_ID):
 		self.BBUs_dict[cell_ID][bbu_ID]['pred_enabled'] = 0
 
-
+	# OK \/
 	def updt_metrics(self):
 		#1. get actual dba cycle
 		#2. diff between actual cycle and cycle of last orch interval 
-		#3. iterate thru the diff
+		#3. iterate through the diff
 		#4. calc differences in slot usage
 		#5. return values
 		#->> if they exceed read_metric() thresholds they trigger splitting 

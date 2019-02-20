@@ -23,6 +23,8 @@ class OLT(object):
         self.dba = None
         self.set_dba(dba)
 
+        self.count= 0 
+
         self.datareceiver = self.env.process(self.OLT_ULDataReceiver()) # process for receiving requests
         self.allocreceiver = self.env.process(self.OLT_AllocationReceiver())
         self.sender = self.env.process(self.OLT_GrantSender()) # process for sending grant
@@ -46,6 +48,9 @@ class OLT(object):
         """A process which sends a grant message to ONU"""
         while True:
             msg = yield self.grant_store.get() # receive grant from dba
+            self.count+=1
+            if self.env.now > 1:
+                print "!>!> CHEGARAM %d pkts na OLT apos 1 segundo. TOTAL: %d Mbps" % (self.count,((self.count*1500*8))/1000**2)
             #print("{} - grant enviado - {}".format(msg['id'],self.env.now))
             #print msg
             self.odn.activate_wavelength(msg['wavelength'],self.olt_number)

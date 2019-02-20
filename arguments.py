@@ -13,7 +13,7 @@ parser.add_argument("-D", "--duration", type=int, default=2, help="Duration of s
 parser.add_argument("-S", "--seed", type=int, default=50, help="Random number generator seed number.")
 parser.add_argument("-C", "--cells", type=int, default=2, help="Cell clusters number.")
 parser.add_argument("-R", "--rrhs", type=int, default=3, help="Remote radio heads number per cell cluster.")
-parser.add_argument("-A", "--adist", type=int, default=10, help="Interval between CPRI packets arrival in ms.")
+parser.add_argument("-A", "--adist", type=int, default=4, help="Interval between CPRI packets arrival in ms.")
 parser.add_argument("-L", "--lthold", type=int, default=60, help="Lower orchestrator's threshold in %, to trigger splitting.")
 parser.add_argument("-H", "--hthold", type=int, default=90, help="Higher orchestrator's threshold in %, to trigger splitting.")
 parser.add_argument("-B", "--bwmid", type=int, default=10, help="Maximum Midhaul bandwidth in Gbits.")

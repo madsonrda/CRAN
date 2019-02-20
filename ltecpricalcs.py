@@ -72,6 +72,9 @@ mcs_2_tbs=[0,1,2,3,4,5,6,7,8,9,9,10,11,12,13,14,15,15,16,17,18,19,20,21,22,23,24
 # TBS_TABLE USAGE: tbs_table[resourceblocks][TBS_Index] -> Where TBS_Index == mcs_2_tbs[MCS]
 tbs_table= pd.read_excel(dir_path + "/tabelas/TBS-table.xlsx")
 
+slot_usage_table = {}
+gen_interval = 0.004
+fronthaul_mtu = 1500
 
 # -->> FOR DOWNLINK ONLY <<--
 # #### PHY layer parameters assumptions
@@ -433,7 +436,7 @@ for mhz in MHZs:
 
 ########## TEST ZONE ##############
 
-# multiply_8b[CPRIoption][MHZ] retorna multiplicador de qts AxC na respectiva MHz
+#multiply_8b[CPRIoption][MHZ] retorna multiplicador de qts AxC na respectiva MHz
 multiply_8b={'1':{5:1},'2':{10:1},'3':{20:1},'4':{5:1,20:1},'5':{20:2},'6':{10:1,20:2},'7':{20:4}}
 ordered=multiply_8b.keys()
 ordered.sort()
@@ -459,58 +462,24 @@ for cpri_option in ordered:
 			bw_total=bw_total + bw_axc
 
 		UL_splits[cpri_option][split]['bw'] = bw_total
-		#banda=(bw_total * 0.004) / 8 * 1000 * 1000
-		#print "BW in BYTES  CPRI %s SPLIT %d IN 4ms: %f" % (cpri_option,split, banda)
-		#print "CPRI_option: %s ; Split%d BW: %.3f Mbps ; DICT: %f" % (cpri_option,split,bw_total, UL_splits[cpri_option][split]['bw'])
-		#print UL_splits[coding][cpri_option][split]['bw']
-
-
-
 
 splits_info=UL_splits
 
-log.debug("FINISHING LTE and CPRI CALCULATIONS - RIGHT BEFORE SIMULATION BEGIN")
+############### END OF CALCULATIONS #####################
 
+############### FUNCTIONS START ##################
 
-for cpri in UL_splits:
-	for split in UL_splits[cpri]:
-		print "CPRI %s Split %d BW: %f" % (cpri,split,UL_splits[cpri][split]['bw'])
-		#pass
-
-####################################
-
-#print dict(UL_splits)
-
-# BETTER PRINT OF DEFAULT DICT \/
-#import json
-#data_as_dict = json.loads(json.dumps(UL_splits, indent=5))
-#print(data_as_dict)
-
-
-####### FUNCTION TO CALCULATE UP/DOWN RATIO OF SPLIT JUMPS #########
-# def splits_bw(cpri_option,init_split,final_split,coding=28):
-# 	bw = UL_splits[coding][cpri_option][init_split]['bw']
-
-# 	if init_split > final_split: #split going DOWN -> rising bandwidth
-# 		for cada in range(init_split,final_split -1, -1):
-# 			bw= bw * UL_splits[coding][cpri_option][init_split]['ratio_down']
-
-# 	elif init_split < final_split: #split going UP -> decaying bandwidth
-# 		for cada in range(init_split,final_split +1):
-# 			bw= bw * UL_splits[coding][cpri_option][init_split]['ratio_up']
-
-# 	return bw
-####################################################################
-
-def get_bits_cpri_split(cpri_op,split_op,interval=1):
+def get_bw_cpri_split(cpri_op,split_op,interval=1):
 	#coding=23
-	bw=UL_splits[str(cpri_op)][split_op]['bw'] * interval
+	print "ENTROU GET BW CPRI SPLIT"
+	bw = UL_splits[str(cpri_op)][split_op]['bw'] * interval
+	print "BW: "+str(bw)
 	return bw
 	#size_bits(bw)
 
 def get_bytes_cpri_split(cpri_op,split_op,interval=1):
 	#coding=23
-	bw=((UL_splits[str(cpri_op)][split_op]['bw'] * 1000 * 1000 ) * interval) / 8
+	bw = ((UL_splits[str(cpri_op)][split_op]['bw'] * 1000 * 1000 ) * interval) / 8
 	return bw
 	#size_byte(bw)
 
@@ -528,7 +497,6 @@ def size_byte(pkt_size,interval):
 	"""
 	final_size = ((pkt_size / 8) * 1000 * 1000) * interval
 	return final_size
-
 
 
 def num_eth_pkts(cpri_option,split,interval,pkt_size):
@@ -550,3 +518,123 @@ def num_eth_pkts(cpri_option,split,interval,pkt_size):
         #print "NUM PKTS: %f" % n_pkts
         
         return num_eth_pkts,last_pkt_size
+
+def gen_slot_usage_table(interval,eth_pkt_size,total_cpri_options=7):
+	cpri=0
+	split=0
+	future_slot_table={}
+
+	try:
+		ordered_dict=dict_bw.keys()
+		ordered_dict.sort()
+		for cada in ordered_dict:
+			cpri+=1
+			split=0
+			future_slot_table[cpri]=[]
+			#for each in range(len(dict_bw[cada])):
+			for each in range(total_cpri_options):
+				split+=1
+				bw = dict_bw[cada][each]
+				slots,extra_pkt_size = num_eth_pkts(cpri,split,interval,eth_pkt_size)
+				if extra_pkt_size > 0:
+					slots+=1
+				#print "CHAVE: %s BANDA: %f CPRI: %d SPLIT: %d SLOTS: %d" % (cada, bw, cpri, split, slots)
+				future_slot_table[cpri].append(slots)
+
+	except Exception as e:
+		print "ERROR BELOW DURING SLOT TABLE UPDATE:"
+		print e
+		return
+
+	return future_slot_table,interval
+	
+def set_slot_usage_table(interval,mtu,total_cpri_options=7):
+	future_slot_table,new_interval = gen_slot_usage_table(interval,mtu,total_cpri_options)
+	
+	global slot_usage_table
+	global gen_interval
+	global fronthaul_mtu
+	slot_usage_table = future_slot_table
+	gen_interval = new_interval
+	fronthaul_mtu = mtu
+
+def get_slot_usage(cpri,split,mtu=1500,interval=0.004):
+	global gen_interval
+	global fronthaul_mtu
+	if interval == gen_interval:
+		if mtu == fronthaul_mtu:
+			return slot_usage_table[cpri][split]
+		else:
+			raise Exception('MTU parameter for the get_slot_usage function is different from the actual global fronthaul_mtu.\n \
+			Parameter is '+str(mtu)+' and global is '+str(fronthaul_mtu))	
+	else:
+		raise Exception('Interval parameter for the get_slot_usage function is different from the actual global gen_interval.\n \
+			Parameter is '+str(interval)+' and global is '+str(gen_interval))
+
+def print_slot_usage_table(aux=None,rows=None):
+	if rows == None:
+		rows=['Split 1','Split 2','Split 3','Split 4','Split 5','Split 6','Split 7']
+	else:
+		pass
+	
+	if aux == None:
+		table = pd.DataFrame(data=slot_usage_table, index=rows)
+	else:
+		table = pd.DataFrame(data=aux, index=rows)
+	#table.plot()
+	#print table
+	#print "TIME SLOTS NEEDED PER CPRI AND SPLIT OPTION EVERY %dms INTERVAL" % gen_interval*1000
+	print(table.to_string())
+
+
+### USELESS FUNCTION TO CALCULATE UP/DOWN RATIO OF SPLIT JUMPS ###
+# def splits_bw(cpri_option,init_split,final_split,coding=28):
+# 	bw = UL_splits[coding][cpri_option][init_split]['bw']
+
+# 	if init_split > final_split: #split going DOWN -> rising bandwidth
+# 		for cada in range(init_split,final_split -1, -1):
+# 			bw= bw * UL_splits[coding][cpri_option][init_split]['ratio_down']
+
+# 	elif init_split < final_split: #split going UP -> decaying bandwidth
+# 		for cada in range(init_split,final_split +1):
+# 			bw= bw * UL_splits[coding][cpri_option][init_split]['ratio_up']
+
+# 	return bw
+
+############### FUNCTIONS END ##################
+
+
+
+######### START DEBUG/PRINT ZONE #############
+
+# -------------- Print TABLE of BANDWIDTH per each CPRI OPTION and SPLIT -----------##  ##
+dict_bw={'CPRI1': [614.400000,491.520000,230.400000,193.536000,96.768000,11.680000,11.180000,10.665845,10.630457,10.616302], \
+'CPRI2': [1228.800000,983.040000,460.800000,423.936000,211.968000,23.920000,23.420000,22.889622,22.813678,22.783300], \
+'CPRI3': [2457.600000,1966.080000,921.600000,884.736000,442.368000,49.936000,49.436000,48.871141,48.708994,48.644135], \
+'CPRI4': [3072.000000,2457.600000,1152.000000,1078.272000,539.136000,61.616000,60.616000,59.536986,59.339451,59.260437],\
+'CPRI5': [4915.200000,3932.160000,1843.200000,1769.472000,884.736000,99.872000,98.872000,97.742282,97.417988,97.288270 ], \
+'CPRI6': [6144.000000,4915.200000,2304.000000,2193.408000,1096.704000,123.792000,122.292000,120.631905,120.231666,120.071571], \
+'CPRI7': [9830.400000,7864.320000,3686.400000,3538.944000,1769.472000,199.744000,197.744000,195.484565,194.835976,194.576541]}
+
+rows=['Split 1','Split 2','Split 3','Split 4','Split 5','Split 6','Split 7','Split 8','Split 9','Split 10']
+df = pd.DataFrame(data=dict_bw, index=rows)
+#df.plot()
+#print df
+print(df.to_string())
+
+print "\n\n\n"
+
+# -------------- Print TABLE of SLOT USAGE per each CPRI OPTION and SPLIT -----------
+interval=0.004
+eth_pkt_size=1500
+set_slot_usage_table(interval,eth_pkt_size)
+
+print "TIME SLOTS NEEDED PER CPRI AND SPLIT OPTION EVERY %dms INTERVAL" % (interval*1000)
+print_slot_usage_table()
+
+print "\n\n\n"
+############## END DEBUG/PRINT ZONE #################
+
+log.debug("FINISHING LTE and CPRI CALCULATIONS - RIGHT BEFORE SIMULATION BEGIN")
+
+

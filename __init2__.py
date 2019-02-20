@@ -21,6 +21,8 @@ INTERVAL = INTERVAL * 1000 # transforming second to ms
 LTHOLD = LTHOLD/100.0
 HTHOLD = HTHOLD/100.0
 
+#GEN_INTERVAL = GEN_INTERVAL # Time between generated packets
+
 ##### SIMULATION FLAGS: #####
 
 #Disable logging by uncommenting below
@@ -129,4 +131,5 @@ splitter1.set_dba(olt1.get_dba())
 #tc(env,pkt_gen2,0.5)
 
 #start simulation
-env.run(until=0.25)
+#env.run(until=0.25)
+env.run(until=1.1)
