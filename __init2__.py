@@ -21,7 +21,6 @@ INTERVAL = INTERVAL * 1000 # transforming second to ms
 LTHOLD = LTHOLD/100.0
 HTHOLD = HTHOLD/100.0
 
-#GEN_INTERVAL = GEN_INTERVAL # Time between generated packets
 
 ##### SIMULATION FLAGS: #####
 
@@ -99,7 +98,7 @@ for i in range(N_RRHS):
     #pkt_gen1.append(PacketGenerator(env,i,ONUs1[i],bbu_store1,random.randint(1,N_RRHS)))
 
     cpri1=1
-    pkt_gen1.append(PacketGenerator(env,i,ONUs1[i],bbu_store1,cell1,cpri1))
+    pkt_gen1.append(PacketGenerator(env,i,ONUs1[i],bbu_store1,cell1,cpri1,interval=GEN_INTERVAL))
 #criar link entre a OLT e o BBU POOL
 link_dc_local1 = ODN(env,monitoring,"link_dc_local1")
 link_dc_local1.create_wavelength(150,1)#wavelength = 150

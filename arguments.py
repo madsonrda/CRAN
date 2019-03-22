@@ -18,6 +18,7 @@ parser.add_argument("-L", "--lthold", type=int, default=60, help="Lower orchestr
 parser.add_argument("-H", "--hthold", type=int, default=90, help="Higher orchestrator's threshold in %, to trigger splitting.")
 parser.add_argument("-B", "--bwmid", type=int, default=10, help="Maximum Midhaul bandwidth in Gbits.")
 parser.add_argument("-I", "--interval", type=int, default=2.001, help="Interval in secs between orchestrator consulting the MID.")
+parser.add_argument("-G", "--geninterval", type=float, default=0.0005, help="Interval in seconds between pkts generated at RRH.")
 #parser.add_argument("-Q", "--qlimit", type=int, default=None, help="The size of the FH and MID port queue in bytes.")
 
 args = parser.parse_args()
@@ -33,4 +34,4 @@ LTHOLD = args.lthold
 HTHOLD = args.hthold
 BWMID = args.bwmid
 INTERVAL = args.interval
-
+GEN_INTERVAL = args.geninterval

@@ -3,8 +3,6 @@ import ltecpricalcs as calc
 import logging as log
 import simtime as l
 
-interval = 0.004
-
 class BBU(object):
 	def __init__(self,env,bbu_id,bbupoll_id,post_proc_buffer=None,split=7):
 		self.bbu_id = bbu_id

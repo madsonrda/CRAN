@@ -56,7 +56,7 @@ class ONU(object):
 
     def grant_processing(self,grant_list):
         #print("grant na onu {}-{}".format(self.oid,grant_list))
-        for grant in grant_list:
+        for grant in grant_list: # MUDAR ISTO, PARA CONSULTAS SUCESSIVAS <<<<< 
             try:
                 next_grant = grant['start'] - self.env.now #time until next grant begining
                 print("next_grant timeout {}".format(next_grant))

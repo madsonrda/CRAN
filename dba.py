@@ -337,7 +337,8 @@ class slot_table(object):
 
 
 class PM_DWBA(M_DWBA):
-    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs,bandwidth=10000000000,delay_limit=0.000250,distance=20):
+    def __init__(self,env,monitoring,grant_store,wavelengths,ONUs,bandwidth=10000000000,\
+        delay_limit=0.000250,distance=20,cycle_interval=0.004):
         DBA.__init__(self,env,monitoring,grant_store,bandwidth,delay_limit)
         self.ONUs = ONUs
         self.distance= distance
@@ -365,8 +366,11 @@ class PM_DWBA(M_DWBA):
         self.grant_history = range(len(self.ONUs)) #grant history per ONU (training set)
         self.GATE = range(len(self.ONUs))
         # self.predictions_array = []
-        self.cycle_interval = 0.004
+        self.cycle_interval = cycle_interval
         self.propagation_delay = (distance/self.lightspeed)
+        print "DELAY LIMIT: %f" % self.time_limit
+        print "PROPAGATION DELAY: %f" % self.propagation_delay
+        print "MAX TRANSMISSION DELAY: %f" % (self.time_limit - self.propagation_delay)
         for i in range(len(self.ONUs)):
         #     # training unit
             self.grant_history[i] = {'cycle': [],  'slots': []}
@@ -374,12 +378,19 @@ class PM_DWBA(M_DWBA):
         self.slot_time = self.calc_slot_time()
         print "SLOT TIME: %f" % self.slot_time
         self.normal_slots = int(math.floor((self.time_limit - 2*self.propagation_delay)/float(self.slot_time)))
+        #self.normal_slots2 = min((self.cycle_interval/float(self.slot_time)),int(math.floor(self.time_limit/float(self.slot_time))))
+        self.normal_slots2 = int(math.floor(self.time_limit/float(self.slot_time)))
         print "NORMAL SLOTS: %d" % self.normal_slots
         if self.normal_slots < 1:
             print "NUM SLOTS leq 1"
         self.tot_slots = int(math.floor((self.time_limit - self.propagation_delay)/float(self.slot_time)))
+        
         print "TOT SLOTS: %d" % self.tot_slots
         self.grant_slots = self.tot_slots - self.normal_slots
+        #self.grant_slots2 = min(((self.cycle_interval-self.time_limit)/float(self.slot_time)),int(math.floor(self.time_limit/float(self.slot_time))))
+        self.grant_slots2 = int(math.floor(2*self.propagation_delay/float(self.slot_time)))
+
+        self.tot_slots2 = self.grant_slots2 + self.normal_slots2
         print "GRANT SLOTS: %d" % self.grant_slots
         
         # 500us
@@ -397,12 +408,24 @@ class PM_DWBA(M_DWBA):
         self.higher_delay_time = self.cycle_interval - self.time_limit - 2*self.propagation_delay - self.guard_interval
         self.higher_delay_slots = int(math.floor(self.higher_delay_time/float(self.slot_time)))
 
+        self.higher_delay_time2 = self.higher_delay_time
+        self.higher_delay_slots2 = self.higher_delay_slots
+
         print "HIGHER DELAY TIME: %f" % self.higher_delay_time
         print "HIGHER DELAY SLOTS: %d" % self.higher_delay_slots
         print "ALL SLOTS IN CYCLE INTERVAL OF %d ms: %d" % (self.cycle_interval*1000, self.higher_delay_slots+self.normal_slots+self.grant_slots)
         if self.higher_delay_slots < 1:
             print "Higher SLOTS leq 1"
 
+
+        print ""
+        print "SLOT TIME: %f" % self.slot_time
+        print "NORMAL SLOTS: %d" % self.normal_slots2
+        print "TOT SLOTS: %d" % self.tot_slots2
+        print "GRANT SLOTS: %d" % self.grant_slots2
+        print "HIGHER DELAY TIME: %f" % self.higher_delay_time2
+        print "HIGHER DELAY SLOTS: %d" % self.higher_delay_slots2
+        print "ALL SLOTS IN CYCLE INTERVAL OF %d ms: %d" % (self.cycle_interval*1000, self.higher_delay_slots2+self.normal_slots2+self.grant_slots2)
 
     def calc_slot_time(self):
 
@@ -677,6 +700,7 @@ class PM_DWBA(M_DWBA):
                 self.active_wavelengths = []
                 self.AllocGathering.succeed()
                 self.AllocGathering = self.env.event()
+        # resource released automatically
 
 class SM_DBA(DBA):
     def __init__(self,env,monitoring,grant_store,wavelengths,ONUs,bandwidth=25000000000,delay_limit=1.001250):

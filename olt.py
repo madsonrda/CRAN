@@ -7,7 +7,7 @@ import simtime as l
 
 class OLT(object):
     """Optical line terminal"""
-    def __init__(self,env,monitoring,olt_number,odn,ONUs,wavelengths,dba,output=None,output_wavelength=None):
+    def __init__(self,env,monitoring,olt_number,odn,ONUs,wavelengths,dba,output=None,output_wavelength=None,gen_interval=0.004):
         self.env = env
         self.monitoring = monitoring
         self.olt_number = olt_number

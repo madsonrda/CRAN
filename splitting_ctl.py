@@ -56,7 +56,7 @@ class Orchestrator(object):
 			#self.read_metrics = self.env.process(self.read_metrics())
 
 		# same function (num_pkts_burst), but with 2 names to it
-		self.num_pkts_burst = self.sim_slot_usage
+		#self.num_pkts_burst = self.sim_slot_usage
 	
 	def init_bbu_dict(self, cell_id, cell_id_edge_BBUs, cell_id_dc_BBUs, split=1, fronthaul_obj=None):
 		# [cell_id][BBU_id]['split']=split

@@ -633,6 +633,15 @@ print "TIME SLOTS NEEDED PER CPRI AND SPLIT OPTION EVERY %dms INTERVAL" % (inter
 print_slot_usage_table()
 
 print "\n\n\n"
+
+test_interval=0.001
+test_pkt_size=1500
+total_cpri_options=7
+test_slot_table,test_interval = gen_slot_usage_table(test_interval,test_pkt_size,total_cpri_options)
+
+print "TIME SLOTS NEEDED PER CPRI AND SPLIT OPTION EVERY %dms INTERVAL" % (test_interval*1000)
+print_slot_usage_table(aux=test_slot_table)
+print "\n\n\n"
 ############## END DEBUG/PRINT ZONE #################
 
 log.debug("FINISHING LTE and CPRI CALCULATIONS - RIGHT BEFORE SIMULATION BEGIN")

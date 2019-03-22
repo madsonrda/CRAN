@@ -59,7 +59,7 @@ class PacketGenerator(object):
         self.CpriConfig(cpri_option,self.pkt_size)# set CPRI configurations
         self.action = env.process(self.run())  # starts the run() method as a SimPy process
 
-    def CpriConfig(self, cpri_option,pkt_size,split=5):
+    def CpriConfig(self, cpri_option,pkt_size,split=1):
 
         self.cpri_option = cpri_option
         #print("{}:{} - my cpri is {}".format(self.env.now,self.id,self.cpri_option))
@@ -88,7 +88,7 @@ class PacketGenerator(object):
 
 
     def run(self):
-        """The traffoc generator function used in simulations.
+        """The traffic generator function used in simulations.
         """
         while self.env.now < self.finish:
             # wait for next transmission
